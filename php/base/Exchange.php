@@ -125,6 +125,7 @@ class Exchange {
         'btctradeua',
         'btcturk',
         'buda',
+        'bybit',
         'bytetrade',
         'cex',
         'chilebit',

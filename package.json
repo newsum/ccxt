@@ -482,7 +482,9 @@
     "bytetrade.com",
     "ByteTrade",
     "ftx.com",
-    "FTX"
+    "FTX",
+    "bybit.com",
+    "Bybit"
   ],
   "collective": {
     "type": "opencollective",
