@@ -186,7 +186,7 @@ class bybit(Exchange):
 
     async def fetch_my_trades(self, symbol=None, since=None, limit=None, params={}):
         await self.load_markets()
-        if not ('order_id' in list(params.keys())) and (symbol is None):
+        if not ('order_id' in params) and (symbol is None):
             raise ArgumentsRequired(self.id + ' fetchMyTrades requires `symbol` or `order_id` param')
         request = {}
         market = None
@@ -305,7 +305,7 @@ class bybit(Exchange):
         if price is not None:
             request['price'] = price
         response = None
-        if ('stop_px' in list(params.keys())) and ('base_price' in list(params.keys())):
+        if ('stop_px' in params) and ('base_price' in params):
             response = await self.privatePostStopOrderCreate(self.extend(request, params))
         else:
             response = await self.privatePostOrderCreate(self.extend(request, params))
@@ -495,7 +495,7 @@ class bybit(Exchange):
 
     def parse_order(self, order):
         status = self.parse_order_status(self.safe_string_2(order, 'order_status', 'stop_order_status'))
-        symbol = self.find_symbol(self.safe_string(order, 'symbol'))
+        symbol = self.findSymbol(self.safe_string(order, 'symbol'))
         timestamp = self.parse8601(self.safe_string(order, 'created_at'))
         lastTradeTimestamp = self.truncate(self.safe_float(order, 'last_exec_time') * 1000, 0)
         qty = self.safe_float(order, 'qty')  # ordered amount in quote currency
@@ -568,7 +568,7 @@ class bybit(Exchange):
 
     def parse_ticker(self, ticker, market=None):
         timestamp = self.safe_integer(ticker, 'close_time')
-        symbol = self.find_symbol(self.safe_string(ticker, 'symbol'), market)
+        symbol = self.findSymbol(self.safe_string(ticker, 'symbol'), market)
         last = self.safe_float(ticker, 'last_price')
         return {
             'symbol': symbol,

@@ -8,6 +8,7 @@ import base64
 import math
 from ccxt.base.errors import ExchangeError
 from ccxt.base.errors import PermissionDenied
+from ccxt.base.errors import BadSymbol
 from ccxt.base.errors import InsufficientFunds
 from ccxt.base.errors import InvalidOrder
 from ccxt.base.errors import OrderNotFound
@@ -555,6 +556,7 @@ class hitbtc2(hitbtc):
             'exceptions': {
                 '1003': PermissionDenied,  # "Action is forbidden for self API key"
                 '2010': InvalidOrder,  # "Quantity not a valid number"
+                '2001': BadSymbol,  # "Symbol not found"
                 '2011': InvalidOrder,  # "Quantity too low"
                 '2020': InvalidOrder,  # "Price not a valid number"
                 '20002': OrderNotFound,  # canceling non-existent order
@@ -634,7 +636,7 @@ class hitbtc2(hitbtc):
                 if currency['disabled']:
                     active = False
             type = 'fiat'
-            if ('crypto' in list(currency.keys())) and currency['crypto']:
+            if ('crypto' in currency) and currency['crypto']:
                 type = 'crypto'
             name = self.safe_string(currency, 'fullName')
             result[code] = {
@@ -1393,10 +1395,8 @@ class hitbtc2(hitbtc):
             # {"error":{"code":20002,"message":"Order not found","description":""}}
             if body[0] == '{':
                 if 'error' in response:
-                    code = self.safe_string(response['error'], 'code')
-                    exceptions = self.exceptions
-                    if code in exceptions:
-                        raise exceptions[code](feedback)
+                    errorCode = self.safe_string(response['error'], 'code')
+                    self.throw_exactly_matched_exception(self.exceptions, errorCode, feedback)
                     message = self.safe_string(response['error'], 'message')
                     if message == 'Duplicate clientOrderId':
                         raise InvalidOrder(feedback)

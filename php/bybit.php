@@ -10,13 +10,13 @@ use Exception; // a common import
 class bybit extends Exchange {
 
     public function describe () {
-        return array_replace_recursive (parent::describe (), array (
+        return array_replace_recursive(parent::describe (), array(
             'id' => 'bybit',
             'name' => 'Bybit',
-            'countries' => array ( 'SG' ), // Singapore
+            'countries' => array( 'SG' ), // Singapore
             'userAgent' => 'sdk_ccxt/bybit_1.0',
             'rateLimit' => 100,
-            'has' => array (
+            'has' => array(
                 'fetchDepositAddress' => false,
                 'CORS' => false,
                 'fetchTickers' => true,
@@ -33,7 +33,7 @@ class bybit extends Exchange {
                 'fetchWithdrawals' => true,
                 'fetchTransactions' => false,
             ),
-            'timeframes' => array (
+            'timeframes' => array(
                 '1m' => '1',
                 '3m' => '3',
                 '5m' => '5',
@@ -50,14 +50,14 @@ class bybit extends Exchange {
                 '1Y' => 'Y',
             ),
             'debug' => false, // set true to use testnet
-            'urls' => array (
-                'test' => array (
+            'urls' => array(
+                'test' => array(
                     'v2' => 'http://api-testnet.bybit.com/v2',
                     'wapi' => 'https://api-testnet.bybit.com',
                     'public' => 'https://api-testnet.bybit.com/open-api',
                     'private' => 'https://api-testnet.bybit.com/open-api',
                 ),
-                'api' => array (
+                'api' => array(
                     'v2' => 'https://api.bybit.com/v2',
                     'wapi' => 'https://api.bybit.com',
                     'public' => 'https://api.bybit.com/open-api',
@@ -65,14 +65,14 @@ class bybit extends Exchange {
                 ),
                 'logo' => 'https://user-images.githubusercontent.com/3198806/66993457-30a52700-f0fe-11e9-810c-a4a51e36fd20.png',
                 'www' => 'https://www.bybit.com',
-                'doc' => array (
+                'doc' => array(
                     'https://github.com/bybit-exchange/bybit-official-api-docs',
                 ),
                 'fees' => 'https://help.bybit.com/hc/en-us/articles/360007291173-Trading-Fee',
             ),
-            'api' => array (
-                'v2' => array (
-                    'get' => array (
+            'api' => array(
+                'v2' => array(
+                    'get' => array(
                         'public/time',
                         'public/symbols',
                         'public/tickers',
@@ -82,19 +82,19 @@ class bybit extends Exchange {
                         'private/execution/list',
                     ),
                 ),
-                'wapi' => array (
-                    'get' => array (
+                'wapi' => array(
+                    'get' => array(
                         'position/list',
                     ),
                 ),
-                'private' => array (
-                    'get' => array (
+                'private' => array(
+                    'get' => array(
                         'order/list',
                         'stop-order/list',
                         'wallet/fund/records',
                         'wallet/withdraw/list',
                     ),
-                    'post' => array (
+                    'post' => array(
                         'order/create',
                         'order/cancel',
                         'stop-order/create',
@@ -102,8 +102,8 @@ class bybit extends Exchange {
                     ),
                 ),
             ),
-            'fees' => array (
-                'trading' => array (
+            'fees' => array(
+                'trading' => array(
                     'tierBased' => false,
                     'percentage' => true,
                     'taker' => 0.00075,
@@ -111,12 +111,12 @@ class bybit extends Exchange {
                 ),
             ),
             // exchange-specific options
-            'options' => array (
+            'options' => array(
                 'recvWindow' => 5 * 1000, // 5 seconds by default
                 'timeDifference' => 0,
                 'adjustTime' => false, // set true to sync server time before api call
             ),
-            'exceptions' => array (
+            'exceptions' => array(
                 '-1' => '\\ccxt\\ExchangeNotAvailable',
                 '20010' => '\\ccxt\\InvalidOrder', // createOrder -> 'invalid qty' or others
                 '10002' => '\\ccxt\\InvalidNonce', // 'your time is ahead of server'
@@ -147,7 +147,7 @@ class bybit extends Exchange {
         $response = $this->v2GetPublicSymbols ($params);
         $data = $this->safe_value($response, 'result', array());
         $result = array();
-        for ($i = 0; $i < count ($data); $i++) {
+        for ($i = 0; $i < count($data); $i++) {
             $market = $data[$i];
             $id = $this->safe_string($market, 'name');
             $baseId = $this->safe_string($market, 'base_currency');
@@ -156,7 +156,7 @@ class bybit extends Exchange {
             $base = $this->safe_currency_code($baseId);
             $quote = $this->safe_currency_code($quoteId);
             $symbol = $base . '/' . $quote;
-            $result[] = array (
+            $result[] = array(
                 'id' => $id,
                 'symbol' => $symbol,
                 'base' => $base,
@@ -173,10 +173,10 @@ class bybit extends Exchange {
     public function fetch_ticker ($symbol, $params = array ()) {
         $this->load_markets();
         $market = $this->market ($symbol);
-        $request = array (
+        $request = array(
             'symbol' => $market['id'],
         );
-        $response = $this->v2GetPublicTickers (array_merge ($request, $params));
+        $response = $this->v2GetPublicTickers (array_merge($request, $params));
         return $this->parse_ticker($response['result'][0]);
     }
 
@@ -203,18 +203,18 @@ class bybit extends Exchange {
         if ($limit !== null) {
             $request['limit'] = $limit;
         }
-        $response = $this->v2GetPrivateExecutionList (array_merge ($request, $params));
+        $response = $this->v2GetPrivateExecutionList (array_merge($request, $params));
         return $this->parse_trades($this->safe_value($response['result'], 'trade_list', array()), $market, $since, $limit);
     }
 
     public function fetch_order_book ($symbol, $limit = null, $params = array ()) {
         $this->load_markets();
         $market = $this->market ($symbol);
-        $request = array (
+        $request = array(
             'symbol' => $market['id'],
         );
-        $response = $this->v2GetPublicOrderBookL2 (array_merge ($request, $params));
-        $result = array (
+        $response = $this->v2GetPublicOrderBookL2 (array_merge($request, $params));
+        $result = array(
             'bids' => array(),
             'asks' => array(),
             'timestamp' => null,
@@ -222,13 +222,13 @@ class bybit extends Exchange {
             'nonce' => null,
         );
         $data = $this->safe_value($response, 'result', array());
-        for ($i = 0; $i < count ($data); $i++) {
+        for ($i = 0; $i < count($data); $i++) {
             $order = $data[$i];
             $side = ($order['side'] === 'Sell') ? 'asks' : 'bids';
             $amount = $this->safe_float($order, 'size');
             $price = $this->safe_float($order, 'price');
             if ($price !== null) {
-                $result[$side][] = array ( $price, $amount );
+                $result[$side][] = array( $price, $amount );
             }
         }
         $result['bids'] = $this->sort_by($result['bids'], 0, true);
@@ -239,10 +239,10 @@ class bybit extends Exchange {
     public function fetch_balance ($params = array ()) {
         $this->load_markets();
         $request = array();
-        $response = $this->wapiGetPositionList (array_merge ($request, $params));
+        $response = $this->wapiGetPositionList (array_merge($request, $params));
         $retData = $response['result'];
         $result = array( 'info' => $retData );
-        for ($i = 0; $i < count ($retData); $i++) {
+        for ($i = 0; $i < count($retData); $i++) {
             $position = $retData[$i];
             $symbol = $this->safe_string($position, 'symbol');
             $currencyId = $this->convert_symbol_to_currency ($symbol);
@@ -258,7 +258,7 @@ class bybit extends Exchange {
     public function fetch_ohlcv ($symbol, $timeframe = '1m', $since = null, $limit = null, $params = array ()) {
         $this->load_markets();
         $market = $this->market ($symbol);
-        $request = array (
+        $request = array(
             'symbol' => $market['id'],
             'interval' => $this->timeframes[$timeframe],
         );
@@ -270,16 +270,16 @@ class bybit extends Exchange {
         if ($limit !== null) {
             $request['limit'] = $limit; // default == max == 200
         }
-        $response = $this->v2GetPublicKlineList (array_merge ($request, $params));
+        $response = $this->v2GetPublicKlineList (array_merge($request, $params));
         return $this->parse_ohlcvs($response['result'], $market, $timeframe, $since, $limit);
     }
 
     public function fetch_order ($id, $symbol = null, $params = array ()) {
-        $filter = array (
+        $filter = array(
             'order_id' => $id,
         );
-        $response = $this->fetch_orders($symbol, null, null, array_replace_recursive ($filter, $params));
-        $numResults = is_array ($response) ? count ($response) : 0;
+        $response = $this->fetch_orders($symbol, null, null, array_replace_recursive($filter, $params));
+        $numResults = is_array($response) ? count($response) : 0;
         if ($numResults === 1) {
             return $response[0];
         }
@@ -289,11 +289,11 @@ class bybit extends Exchange {
     public function fetch_open_orders ($symbol = null, $since = null, $limit = null, $params = array ()) {
         $openStatusesPairs = $this->order_statuses ('open');
         $openStatusKeys = is_array($openStatusesPairs) ? array_keys($openStatusesPairs) : array();
-        $request = array (
+        $request = array(
             'order_status' => implode(',', $openStatusKeys),
         );
         if ($params !== null) {
-            $request = array_replace_recursive ($params, $request);
+            $request = array_replace_recursive($params, $request);
         }
         return $this->fetch_orders($symbol, $since, $limit, $request);
     }
@@ -311,14 +311,14 @@ class bybit extends Exchange {
             $market = $this->market ($symbol);
             $request['symbol'] = $market['id'];
         }
-        $request = array_replace_recursive ($request, $params);
+        $request = array_replace_recursive($request, $params);
         $response = $this->privateGetOrderList ($request);
         return $this->parse_orders($this->safe_value($response['result'], 'data', array()), $market, $since, $limit);
     }
 
     public function create_order ($symbol, $type, $side, $amount, $price = null, $params = array ()) {
         $this->load_markets();
-        $request = array (
+        $request = array(
             'symbol' => $this->market_id($symbol),
             'side' => $this->capitalize ($side),
             'qty' => $amount,
@@ -329,36 +329,36 @@ class bybit extends Exchange {
         }
         $response = null;
         if ((is_array($params) && array_key_exists('stop_px', $params)) && (is_array($params) && array_key_exists('base_price', $params))) {
-            $response = $this->privatePostStopOrderCreate (array_merge ($request, $params));
+            $response = $this->privatePostStopOrderCreate (array_merge($request, $params));
         } else {
-            $response = $this->privatePostOrderCreate (array_merge ($request, $params));
+            $response = $this->privatePostOrderCreate (array_merge($request, $params));
         }
         $order = $this->parse_order($response['result']);
         $id = $this->safe_string($order, 'order_id');
         $this->orders[$id] = $order;
-        return array_merge (array( 'info' => $response ), $order);
+        return array_merge(array( 'info' => $response ), $order);
     }
 
     public function cancel_order ($id, $symbol = null, $params = array ()) {
         $this->load_markets();
-        $request = array (
+        $request = array(
             'order_id' => $id,
         );
         $response = null;
         if (is_array($params) && array_key_exists('stop_px', $params)) {
-            $response = $this->privatePostStopOrderCancel (array_merge ($request, $params));
+            $response = $this->privatePostStopOrderCancel (array_merge($request, $params));
         } else {
-            $response = $this->privatePostOrderCancel (array_merge ($request, $params));
+            $response = $this->privatePostOrderCancel (array_merge($request, $params));
         }
         return $this->parse_order($response['result']);
     }
 
     public function fetch_deposits ($code = null, $since = null, $limit = null, $params = array ()) {
-        $request = array (
+        $request = array(
             'wallet_fund_type' => 'Deposit',
         );
         if ($params !== null) {
-            $request = array_replace_recursive ($params, $request);
+            $request = array_replace_recursive($params, $request);
         }
         return $this->fetch_fund_records ($code, $since, $limit, $request);
     }
@@ -377,7 +377,7 @@ class bybit extends Exchange {
         if ($limit !== null) {
             $request['limit'] = $limit;
         }
-        $reqParams = array_merge ($request, $params);
+        $reqParams = array_merge($request, $params);
         $response = $this->privateGetWalletWithdrawList ($reqParams);
         return $this->parse_transactions($this->safe_value($response['result'], 'data', array()), $currency, $since, $limit);
     }
@@ -396,7 +396,7 @@ class bybit extends Exchange {
             $currency = $this->currency ($code);
             $request['coin'] = $currency;
         }
-        $reqParams = array_merge ($request, $params);
+        $reqParams = array_merge($request, $params);
         $response = $this->privateGetWalletFundRecords ($reqParams);
         $transactions = $this->filter_by_array($this->safe_value($response['result'], 'data', array()), 'type', ['Withdraw', 'Deposit'], false);
         return $this->parse_transactions($transactions, $currency, $since, $limit);
@@ -422,14 +422,14 @@ class bybit extends Exchange {
                 $symbol = $marketId;
             }
         }
-        $fee = array (
+        $fee = array(
             'cost' => $execFee,
             'currency' => $this->convert_symbol_to_currency ($symbol),
             'rate' => $feeRate,
         );
         $takerOrMaker = $fee['cost'] < 0 ? 'maker' : 'taker';
         $type = $this->safe_string_lower($trade, 'order_type');
-        return array (
+        return array(
             'info' => $trade,
             'timestamp' => $timestamp,
             'datetime' => $this->iso8601 ($timestamp),
@@ -475,7 +475,7 @@ class bybit extends Exchange {
         $amount = $this->safe_float($transaction, 'amount');
         $feeCost = $this->safe_float($transaction, 'fee');
         $currency = $this->safe_string($transaction, 'coin');
-        $fee = array (
+        $fee = array(
             'cost' => $feeCost,
             'currency' => $currency,
         );
@@ -485,7 +485,7 @@ class bybit extends Exchange {
         }
         $txid = $this->safe_string_2($transaction, 'txid', 'tx_id');
         $tagTo = $this->safe_string($transaction, 'destination_tag');
-        return array (
+        return array(
             'info' => $transaction,
             'id' => $id,
             'txid' => $txid,
@@ -508,7 +508,7 @@ class bybit extends Exchange {
     }
 
     public function convert_symbol_to_currency ($symbol) {
-        $symbolToCurrency = array (
+        $symbolToCurrency = array(
             'BTCUSD' => 'BTC',
             'ETHUSD' => 'ETH',
             'XRPUSD' => 'XRP',
@@ -518,7 +518,7 @@ class bybit extends Exchange {
     }
 
     public function parse_transaction_status ($status) {
-        $statuses = array (
+        $statuses = array(
             'Cancelled' => 'canceled',
             'Confirmation Email Expired' => 'canceled',
             'Transferred successfully' => 'ok',
@@ -533,7 +533,7 @@ class bybit extends Exchange {
     }
 
     public function parse_transaction_type ($transType) {
-        $transTypes = array (
+        $transTypes = array(
             'Deposit' => 'deposit',
             'Withdraw' => 'withdrawal',
             'withdraw' => 'withdrawal',
@@ -543,7 +543,7 @@ class bybit extends Exchange {
 
     public function parse_order ($order) {
         $status = $this->parse_order_status($this->safe_string_2($order, 'order_status', 'stop_order_status'));
-        $symbol = $this->find_symbol($this->safe_string($order, 'symbol'));
+        $symbol = $this->findSymbol ($this->safe_string($order, 'symbol'));
         $timestamp = $this->parse8601 ($this->safe_string($order, 'created_at'));
         $lastTradeTimestamp = $this->truncate ($this->safe_float($order, 'last_exec_time') * 1000, 0);
         $qty = $this->safe_float($order, 'qty'); // ordered $amount in quote currency
@@ -564,7 +564,7 @@ class bybit extends Exchange {
         $side = $this->safe_string_lower($order, 'side');
         $trades = null;
         $fee = null; // fy_todo array("currency":"xx", "$cost":xx, "rate":xx) `cum_exec_fee` not return now
-        return array (
+        return array(
             'info' => $order,
             'id' => $id,
             'datetime' => $this->iso8601 ($timestamp),
@@ -591,7 +591,7 @@ class bybit extends Exchange {
     }
 
     public function order_statuses ($filter = null) {
-        $statuses = array (
+        $statuses = array(
             'Created' => 'created',
             'New' => 'open',
             'PartiallyFilled' => 'open',
@@ -607,7 +607,7 @@ class bybit extends Exchange {
         } else {
             $ret = array();
             $statusKeys = is_array($statuses) ? array_keys($statuses) : array();
-            for ($i = 0; $i < count ($statusKeys); $i++) {
+            for ($i = 0; $i < count($statusKeys); $i++) {
                 if ($statuses[$statusKeys[$i]] === $filter) {
                     $ret[$statusKeys[$i]] = $statuses[$statusKeys[$i]];
                 }
@@ -618,7 +618,7 @@ class bybit extends Exchange {
 
     public function parse_tickers ($rawTickers, $symbols = null) {
         $tickers = array();
-        for ($i = 0; $i < count ($rawTickers); $i++) {
+        for ($i = 0; $i < count($rawTickers); $i++) {
             $tickers[] = $this->parse_ticker($rawTickers[$i]);
         }
         return $this->filter_by_array($tickers, 'symbol', $symbols);
@@ -626,9 +626,9 @@ class bybit extends Exchange {
 
     public function parse_ticker ($ticker, $market = null) {
         $timestamp = $this->safe_integer($ticker, 'close_time');
-        $symbol = $this->find_symbol($this->safe_string($ticker, 'symbol'), $market);
+        $symbol = $this->findSymbol ($this->safe_string($ticker, 'symbol'), $market);
         $last = $this->safe_float($ticker, 'last_price');
-        return array (
+        return array(
             'symbol' => $symbol,
             'timestamp' => $timestamp,
             'datetime' => $this->iso8601 ($timestamp),
@@ -680,11 +680,11 @@ class bybit extends Exchange {
             $env = 'test';
         }
         $url = $this->urls[$env][$api] . '/' . $path;
-        $headers = array (
+        $headers = array(
             'Content-Type' => 'application/x-www-form-urlencoded',
         );
         if (($api === 'private') || ($api === 'wapi') || (mb_strpos($path, 'private') !== false)) {
-            $query = array_merge (array (
+            $query = array_merge(array(
                 'api_key' => $this->apiKey,
                 'timestamp' => $this->nonce (),
                 'recv_window' => $this->options['recvWindow'],
@@ -692,7 +692,7 @@ class bybit extends Exchange {
             $sortedQuery = array();
             $queryKeys = is_array($query) ? array_keys($query) : array();
             $queryKeys->sort ();
-            for ($i = 0; $i < count ($queryKeys); $i++) {
+            for ($i = 0; $i < count($queryKeys); $i++) {
                 $sortedQuery[$queryKeys[$i]] = $query[$queryKeys[$i]];
             }
             $queryStr = $this->rawencode ($sortedQuery);
