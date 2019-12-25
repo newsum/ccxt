@@ -542,7 +542,14 @@ module.exports = class bybit extends Exchange {
 
     parseOrder (order) {
         const status = this.parseOrderStatus (this.safeString2 (order, 'order_status', 'stop_order_status'));
-        const symbol = this.findSymbol (this.safeString (order, 'symbol'));
+        let symbol = undefined;
+        const marketId = this.safeString (ticker, 'symbol');
+        if (marketId in this.markets_by_id) {
+            market = this.markets_by_id[marketId];
+        }
+        if (market !== undefined) {
+            symbol = market['symbol'];
+        }
         const timestamp = this.parse8601 (this.safeString (order, 'created_at'));
         const lastTradeTimestamp = this.truncate (this.safeFloat (order, 'last_exec_time') * 1000, 0);
         const qty = this.safeFloat (order, 'qty'); // ordered amount in quote currency
@@ -625,7 +632,16 @@ module.exports = class bybit extends Exchange {
 
     parseTicker (ticker, market = undefined) {
         const timestamp = this.safeInteger (ticker, 'close_time');
-        const symbol = this.findSymbol (this.safeString (ticker, 'symbol'), market);
+        
+        let symbol = undefined;
+        const marketId = this.safeString (ticker, 'symbol');
+        if (marketId in this.markets_by_id) {
+            market = this.markets_by_id[marketId];
+        }
+        if (market !== undefined) {
+            symbol = market['symbol'];
+        }
+
         const last = this.safeFloat (ticker, 'last_price');
         return {
             'symbol': symbol,
