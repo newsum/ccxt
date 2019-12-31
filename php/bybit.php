@@ -165,6 +165,7 @@ class bybit extends Exchange {
                 'quoteId' => $quoteId,
                 'active' => $active,
                 'info' => $market,
+                'future' => true,
             );
         }
         return $result;
@@ -541,9 +542,16 @@ class bybit extends Exchange {
         return $this->safe_string($transTypes, $transType, $transType);
     }
 
-    public function parse_order ($order) {
+    public function parse_order ($order, $market = null) {
         $status = $this->parse_order_status($this->safe_string_2($order, 'order_status', 'stop_order_status'));
-        $symbol = $this->findSymbol ($this->safe_string($order, 'symbol'));
+        $symbol = null;
+        $marketId = $this->safe_string($order, 'symbol');
+        if (is_array($this->markets_by_id) && array_key_exists($marketId, $this->markets_by_id)) {
+            $market = $this->markets_by_id[$marketId];
+        }
+        if ($market !== null) {
+            $symbol = $market['symbol'];
+        }
         $timestamp = $this->parse8601 ($this->safe_string($order, 'created_at'));
         $lastTradeTimestamp = $this->truncate ($this->safe_float($order, 'last_exec_time') * 1000, 0);
         $qty = $this->safe_float($order, 'qty'); // ordered $amount in quote currency
@@ -626,7 +634,14 @@ class bybit extends Exchange {
 
     public function parse_ticker ($ticker, $market = null) {
         $timestamp = $this->safe_integer($ticker, 'close_time');
-        $symbol = $this->findSymbol ($this->safe_string($ticker, 'symbol'), $market);
+        $symbol = null;
+        $marketId = $this->safe_string($ticker, 'symbol');
+        if (is_array($this->markets_by_id) && array_key_exists($marketId, $this->markets_by_id)) {
+            $market = $this->markets_by_id[$marketId];
+        }
+        if ($market !== null) {
+            $symbol = $market['symbol'];
+        }
         $last = $this->safe_float($ticker, 'last_price');
         return array(
             'symbol' => $symbol,
