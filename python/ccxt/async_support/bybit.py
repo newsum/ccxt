@@ -167,6 +167,7 @@ class bybit(Exchange):
                 'quoteId': quoteId,
                 'active': active,
                 'info': market,
+                'future': True,
             })
         return result
 
@@ -493,9 +494,14 @@ class bybit(Exchange):
         }
         return self.safe_string(transTypes, transType, transType)
 
-    def parse_order(self, order):
+    def parse_order(self, order, market=None):
         status = self.parse_order_status(self.safe_string_2(order, 'order_status', 'stop_order_status'))
-        symbol = self.findSymbol(self.safe_string(order, 'symbol'))
+        symbol = None
+        marketId = self.safe_string(order, 'symbol')
+        if marketId in self.markets_by_id:
+            market = self.markets_by_id[marketId]
+        if market is not None:
+            symbol = market['symbol']
         timestamp = self.parse8601(self.safe_string(order, 'created_at'))
         lastTradeTimestamp = self.truncate(self.safe_float(order, 'last_exec_time') * 1000, 0)
         qty = self.safe_float(order, 'qty')  # ordered amount in quote currency
@@ -568,7 +574,12 @@ class bybit(Exchange):
 
     def parse_ticker(self, ticker, market=None):
         timestamp = self.safe_integer(ticker, 'close_time')
-        symbol = self.findSymbol(self.safe_string(ticker, 'symbol'), market)
+        symbol = None
+        marketId = self.safe_string(ticker, 'symbol')
+        if marketId in self.markets_by_id:
+            market = self.markets_by_id[marketId]
+        if market is not None:
+            symbol = market['symbol']
         last = self.safe_float(ticker, 'last_price')
         return {
             'symbol': symbol,
