@@ -27,6 +27,7 @@ class deribit(Exchange):
             'version': 'v1',
             'userAgent': None,
             'rateLimit': 2000,
+            'contractPrice': 10,
             'has': {
                 'CORS': True,
                 'editOrder': True,
