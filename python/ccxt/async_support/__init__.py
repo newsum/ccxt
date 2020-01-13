@@ -4,7 +4,7 @@
 
 # -----------------------------------------------------------------------------
 
-__version__ = '1.20.99'
+__version__ = '1.21.4'
 
 # -----------------------------------------------------------------------------
 
@@ -102,6 +102,7 @@ from ccxt.async_support.coincheck import coincheck                        # noqa
 from ccxt.async_support.coinegg import coinegg                            # noqa: F401
 from ccxt.async_support.coinex import coinex                              # noqa: F401
 from ccxt.async_support.coinfalcon import coinfalcon                      # noqa: F401
+from ccxt.async_support.coinflex import coinflex                          # noqa: F401
 from ccxt.async_support.coinfloor import coinfloor                        # noqa: F401
 from ccxt.async_support.coingi import coingi                              # noqa: F401
 from ccxt.async_support.coinmarketcap import coinmarketcap                # noqa: F401
@@ -229,6 +230,7 @@ exchanges = [
     'coinegg',
     'coinex',
     'coinfalcon',
+    'coinflex',
     'coinfloor',
     'coingi',
     'coinmarketcap',
