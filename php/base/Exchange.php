@@ -99,6 +99,7 @@ class Exchange {
         'bit2c',
         'bitbank',
         'bitbay',
+        'bitcoincom',
         'bitfinex',
         'bitfinex2',
         'bitflyer',

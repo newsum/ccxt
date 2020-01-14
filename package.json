@@ -492,7 +492,9 @@
     "TimeX",
     "bitz.com",
     "coinflex.com",
-    "CoinFlex"
+    "CoinFlex",
+    "exchange.bitcoin.com",
+    "Bitcoin.com Exchange"
   ],
   "collective": {
     "type": "opencollective",
