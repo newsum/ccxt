@@ -136,6 +136,7 @@ class Exchange {
         'coinbaseprime',
         'coinbasepro',
         'coincheck',
+        'coindcx',
         'coinegg',
         'coinex',
         'coinfalcon',
