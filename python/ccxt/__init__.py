@@ -119,6 +119,7 @@ from ccxt.coinbase import coinbase                          # noqa: F401
 from ccxt.coinbaseprime import coinbaseprime                # noqa: F401
 from ccxt.coinbasepro import coinbasepro                    # noqa: F401
 from ccxt.coincheck import coincheck                        # noqa: F401
+from ccxt.coindcx import coindcx                            # noqa: F401
 from ccxt.coinegg import coinegg                            # noqa: F401
 from ccxt.coinex import coinex                              # noqa: F401
 from ccxt.coinfalcon import coinfalcon                      # noqa: F401
@@ -248,6 +249,7 @@ exchanges = [
     'coinbaseprime',
     'coinbasepro',
     'coincheck',
+    'coindcx',
     'coinegg',
     'coinex',
     'coinfalcon',

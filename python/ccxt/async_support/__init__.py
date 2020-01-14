@@ -100,6 +100,7 @@ from ccxt.async_support.coinbase import coinbase                          # noqa
 from ccxt.async_support.coinbaseprime import coinbaseprime                # noqa: F401
 from ccxt.async_support.coinbasepro import coinbasepro                    # noqa: F401
 from ccxt.async_support.coincheck import coincheck                        # noqa: F401
+from ccxt.async_support.coindcx import coindcx                            # noqa: F401
 from ccxt.async_support.coinegg import coinegg                            # noqa: F401
 from ccxt.async_support.coinex import coinex                              # noqa: F401
 from ccxt.async_support.coinfalcon import coinfalcon                      # noqa: F401
@@ -229,6 +230,7 @@ exchanges = [
     'coinbaseprime',
     'coinbasepro',
     'coincheck',
+    'coindcx',
     'coinegg',
     'coinex',
     'coinfalcon',
