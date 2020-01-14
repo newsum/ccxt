@@ -193,6 +193,7 @@ class Exchange {
         'okex3',
         'paymium',
         'poloniex',
+        'probit',
         'rightbtc',
         'southxchange',
         'stex',
