@@ -40,12 +40,14 @@ class binance(Exchange):
                 'fetchOrder': True,
                 'fetchOrders': True,
                 'fetchOpenOrders': True,
-                'fetchClosedOrders': True,
+                'fetchClosedOrders': 'emulated',
                 'withdraw': True,
                 'fetchFundingFees': True,
                 'fetchDeposits': True,
                 'fetchWithdrawals': True,
                 'fetchTransactions': False,
+                'fetchTradingFee': True,
+                'fetchTradingFees': True,
             },
             'timeframes': {
                 '1m': '1m',
@@ -182,11 +184,14 @@ class binance(Exchange):
                         'order',
                         'account',
                         'balance',
+                        'positionMargin/history',
                         'positionRisk',
                         'userTrades',
                         'income',
                     ],
                     'post': [
+                        'positionMargin',
+                        'marginType',
                         'order',
                         'leverage',
                     ],
@@ -868,7 +873,7 @@ class binance(Exchange):
             'CANCELED': 'canceled',
             'PENDING_CANCEL': 'canceling',  # currently unused
             'REJECTED': 'rejected',
-            'EXPIRED': 'expired',
+            'EXPIRED': 'canceled',
         }
         return self.safe_string(statuses, status, status)
 
@@ -911,6 +916,8 @@ class binance(Exchange):
                         price = cost / filled
                         if self.options['parseOrderToPrecision']:
                             price = float(self.price_to_precision(symbol, price))
+        elif type == 'limit_maker':
+            type = 'limit'
         side = self.safe_string_lower(order, 'side')
         fee = None
         trades = None
@@ -1315,6 +1322,7 @@ class binance(Exchange):
         #     {withdrawList: [{     amount:  14,
         #                             address: "0x0123456789abcdef...",
         #                         successTime:  1514489710000,
+        #                      transactionFee:  0.01,
         #                          addressTag: "",
         #                                txId: "0x0123456789abcdef...",
         #                                  id: "0123456789abcdef...",
@@ -1324,6 +1332,7 @@ class binance(Exchange):
         #                       {     amount:  7600,
         #                             address: "0x0123456789abcdef...",
         #                         successTime:  1515323226000,
+        #                      transactionFee:  0.01,
         #                          addressTag: "",
         #                                txId: "0x0123456789abcdef...",
         #                                  id: "0123456789abcdef...",
@@ -1370,6 +1379,7 @@ class binance(Exchange):
         #       {     amount:  14,
         #             address: "0x0123456789abcdef...",
         #         successTime:  1514489710000,
+        #      transactionFee:  0.01,
         #          addressTag: "",
         #                txId: "0x0123456789abcdef...",
         #                  id: "0123456789abcdef...",
@@ -1399,6 +1409,10 @@ class binance(Exchange):
                 timestamp = applyTime
         status = self.parse_transaction_status_by_type(self.safe_string(transaction, 'status'), type)
         amount = self.safe_float(transaction, 'amount')
+        feeCost = self.safe_float(transaction, 'transactionFee')
+        fee = None
+        if feeCost is not None:
+            fee = {'currency': code, 'cost': feeCost}
         return {
             'info': transaction,
             'id': id,
@@ -1412,7 +1426,7 @@ class binance(Exchange):
             'currency': code,
             'status': status,
             'updated': None,
-            'fee': None,
+            'fee': fee,
         }
 
     async def fetch_deposit_address(self, code, params={}):
@@ -1492,6 +1506,72 @@ class binance(Exchange):
             'info': response,
             'id': self.safe_string(response, 'id'),
         }
+
+    def parse_trading_fee(self, fee, market=None):
+        #
+        #     {
+        #         "symbol": "ADABNB",
+        #         "maker": 0.9000,
+        #         "taker": 1.0000
+        #     }
+        #
+        marketId = self.safe_string(fee, 'symbol')
+        symbol = marketId
+        if marketId in self.markets_by_id:
+            market = self.markets_by_id[marketId]
+            symbol = market['symbol']
+        return {
+            'info': fee,
+            'symbol': symbol,
+            'maker': self.safe_float(fee, 'maker'),
+            'taker': self.safe_float(fee, 'taker'),
+        }
+
+    async def fetch_trading_fee(self, symbol, params={}):
+        await self.load_markets()
+        market = self.market(symbol)
+        request = {
+            'symbol': market['id'],
+        }
+        response = await self.wapiGetTradeFee(self.extend(request, params))
+        #
+        #     {
+        #         "tradeFee": [
+        #             {
+        #                 "symbol": "ADABNB",
+        #                 "maker": 0.9000,
+        #                 "taker": 1.0000
+        #             }
+        #         ],
+        #         "success": True
+        #     }
+        #
+        tradeFee = self.safe_value(response, 'tradeFee', [])
+        first = self.safe_value(tradeFee, 0, {})
+        return self.parse_trading_fee(first)
+
+    async def fetch_trading_fees(self, params={}):
+        await self.load_markets()
+        response = await self.wapiGetTradeFee(params)
+        #
+        #     {
+        #         "tradeFee": [
+        #             {
+        #                 "symbol": "ADABNB",
+        #                 "maker": 0.9000,
+        #                 "taker": 1.0000
+        #             }
+        #         ],
+        #         "success": True
+        #     }
+        #
+        tradeFee = self.safe_value(response, 'tradeFee', [])
+        result = {}
+        for i in range(0, len(tradeFee)):
+            fee = self.parse_trading_fee(tradeFee[i])
+            symbol = fee['symbol']
+            result[symbol] = fee
+        return result
 
     def sign(self, path, api='public', method='GET', params={}, headers=None, body=None):
         url = self.urls['api'][api]

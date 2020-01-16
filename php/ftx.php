@@ -6,6 +6,8 @@ namespace ccxt;
 // https://github.com/ccxt/ccxt/blob/master/CONTRIBUTING.md#how-to-contribute-code
 
 use Exception; // a common import
+use \ccxt\ExchangeError;
+use \ccxt\InvalidOrder;
 
 class ftx extends Exchange {
 
@@ -51,7 +53,7 @@ class ftx extends Exchange {
                 '15m' => '900',
                 '1h' => '3600',
                 '4h' => '14400',
-                '24h' => '86400',
+                '1d' => '86400',
             ),
             'api' => array(
                 'public' => array(
@@ -90,6 +92,8 @@ class ftx extends Exchange {
                         'lt/balances',
                         'lt/creations',
                         'lt/redemptions',
+                        'subaccounts',
+                        'subaccounts/{nickname}/balances',
                     ),
                     'post' => array(
                         'account/leverage',
@@ -98,12 +102,16 @@ class ftx extends Exchange {
                         'conditional_orders',
                         'lt/{token_name}/create',
                         'lt/{token_name}/redeem',
+                        'subaccounts',
+                        'subaccounts/update_name',
+                        'subaccounts/transfer',
                     ),
                     'delete' => array(
                         'orders/{order_id}',
                         'orders/by_client_id/{client_order_id}',
                         'orders',
                         'conditional_orders/{order_id}',
+                        'subaccounts',
                     ),
                 ),
             ),
@@ -570,7 +578,7 @@ class ftx extends Exchange {
         $symbol = null;
         if ($marketId !== null) {
             if (is_array($this->markets_by_id) && array_key_exists($marketId, $this->markets_by_id)) {
-                $market = $this->markets_by_id;
+                $market = $this->markets_by_id[$marketId];
                 $symbol = $market['symbol'];
             } else {
                 $base = $this->safe_currency_code($this->safe_string($trade, 'baseCurrency'));

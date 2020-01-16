@@ -4,7 +4,11 @@
 
 # -----------------------------------------------------------------------------
 
-__version__ = '1.21.4'
+<<<<<<< HEAD
+__version__ = '1.21.62'
+=======
+__version__ = '1.21.62'
+>>>>>>> d2f68ba17c972ee0d6df494d7f5fab00ce454baa
 
 # -----------------------------------------------------------------------------
 
@@ -315,7 +319,7 @@ class Exchange(object):
         self.balance = dict() if self.balance is None else self.balance
         self.orderbooks = dict() if self.orderbooks is None else self.orderbooks
         self.orders = dict() if self.orders is None else self.orders
-        self.trades = list() if self.trades is None else self.trades
+        self.trades = dict() if self.trades is None else self.trades
         self.transactions = dict() if self.transactions is None else self.transactions
         self.currencies = dict() if self.currencies is None else self.currencies
         self.options = dict() if self.options is None else self.options  # Python does not allow to define properties in run-time with setattr
