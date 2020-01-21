@@ -4,7 +4,7 @@
 
 # -----------------------------------------------------------------------------
 
-__version__ = '1.20.99'
+__version__ = '1.21.62'
 
 # -----------------------------------------------------------------------------
 
@@ -63,6 +63,7 @@ from ccxt.async_support.binanceus import binanceus                        # noqa
 from ccxt.async_support.bit2c import bit2c                                # noqa: F401
 from ccxt.async_support.bitbank import bitbank                            # noqa: F401
 from ccxt.async_support.bitbay import bitbay                              # noqa: F401
+from ccxt.async_support.bitcoincom import bitcoincom                      # noqa: F401
 from ccxt.async_support.bitfinex import bitfinex                          # noqa: F401
 from ccxt.async_support.bitfinex2 import bitfinex2                        # noqa: F401
 from ccxt.async_support.bitflyer import bitflyer                          # noqa: F401
@@ -99,9 +100,11 @@ from ccxt.async_support.coinbase import coinbase                          # noqa
 from ccxt.async_support.coinbaseprime import coinbaseprime                # noqa: F401
 from ccxt.async_support.coinbasepro import coinbasepro                    # noqa: F401
 from ccxt.async_support.coincheck import coincheck                        # noqa: F401
+from ccxt.async_support.coindcx import coindcx                            # noqa: F401
 from ccxt.async_support.coinegg import coinegg                            # noqa: F401
 from ccxt.async_support.coinex import coinex                              # noqa: F401
 from ccxt.async_support.coinfalcon import coinfalcon                      # noqa: F401
+from ccxt.async_support.coinflex import coinflex                          # noqa: F401
 from ccxt.async_support.coinfloor import coinfloor                        # noqa: F401
 from ccxt.async_support.coingi import coingi                              # noqa: F401
 from ccxt.async_support.coinmarketcap import coinmarketcap                # noqa: F401
@@ -144,7 +147,6 @@ from ccxt.async_support.liquid import liquid                              # noqa
 from ccxt.async_support.livecoin import livecoin                          # noqa: F401
 from ccxt.async_support.luno import luno                                  # noqa: F401
 from ccxt.async_support.lykke import lykke                                # noqa: F401
-from ccxt.async_support.mandala import mandala                            # noqa: F401
 from ccxt.async_support.mercado import mercado                            # noqa: F401
 from ccxt.async_support.mixcoins import mixcoins                          # noqa: F401
 from ccxt.async_support.oceanex import oceanex                            # noqa: F401
@@ -154,6 +156,7 @@ from ccxt.async_support.okex import okex                                  # noqa
 from ccxt.async_support.okex3 import okex3                                # noqa: F401
 from ccxt.async_support.paymium import paymium                            # noqa: F401
 from ccxt.async_support.poloniex import poloniex                          # noqa: F401
+from ccxt.async_support.probit import probit                              # noqa: F401
 from ccxt.async_support.rightbtc import rightbtc                          # noqa: F401
 from ccxt.async_support.southxchange import southxchange                  # noqa: F401
 from ccxt.async_support.stex import stex                                  # noqa: F401
@@ -167,7 +170,6 @@ from ccxt.async_support.timex import timex                                # noqa
 from ccxt.async_support.upbit import upbit                                # noqa: F401
 from ccxt.async_support.vaultoro import vaultoro                          # noqa: F401
 from ccxt.async_support.vbtc import vbtc                                  # noqa: F401
-from ccxt.async_support.virwox import virwox                              # noqa: F401
 from ccxt.async_support.whitebit import whitebit                          # noqa: F401
 from ccxt.async_support.xbtce import xbtce                                # noqa: F401
 from ccxt.async_support.yobit import yobit                                # noqa: F401
@@ -190,6 +192,7 @@ exchanges = [
     'bit2c',
     'bitbank',
     'bitbay',
+    'bitcoincom',
     'bitfinex',
     'bitfinex2',
     'bitflyer',
@@ -226,9 +229,11 @@ exchanges = [
     'coinbaseprime',
     'coinbasepro',
     'coincheck',
+    'coindcx',
     'coinegg',
     'coinex',
     'coinfalcon',
+    'coinflex',
     'coinfloor',
     'coingi',
     'coinmarketcap',
@@ -271,7 +276,6 @@ exchanges = [
     'livecoin',
     'luno',
     'lykke',
-    'mandala',
     'mercado',
     'mixcoins',
     'oceanex',
@@ -281,6 +285,7 @@ exchanges = [
     'okex3',
     'paymium',
     'poloniex',
+    'probit',
     'rightbtc',
     'southxchange',
     'stex',
@@ -294,7 +299,6 @@ exchanges = [
     'upbit',
     'vaultoro',
     'vbtc',
-    'virwox',
     'whitebit',
     'xbtce',
     'yobit',

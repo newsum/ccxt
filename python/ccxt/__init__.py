@@ -22,7 +22,7 @@
 
 # ----------------------------------------------------------------------------
 
-__version__ = '1.20.99'
+__version__ = '1.21.62'
 
 # ----------------------------------------------------------------------------
 
@@ -82,6 +82,7 @@ from ccxt.binanceus import binanceus                        # noqa: F401
 from ccxt.bit2c import bit2c                                # noqa: F401
 from ccxt.bitbank import bitbank                            # noqa: F401
 from ccxt.bitbay import bitbay                              # noqa: F401
+from ccxt.bitcoincom import bitcoincom                      # noqa: F401
 from ccxt.bitfinex import bitfinex                          # noqa: F401
 from ccxt.bitfinex2 import bitfinex2                        # noqa: F401
 from ccxt.bitflyer import bitflyer                          # noqa: F401
@@ -118,9 +119,11 @@ from ccxt.coinbase import coinbase                          # noqa: F401
 from ccxt.coinbaseprime import coinbaseprime                # noqa: F401
 from ccxt.coinbasepro import coinbasepro                    # noqa: F401
 from ccxt.coincheck import coincheck                        # noqa: F401
+from ccxt.coindcx import coindcx                            # noqa: F401
 from ccxt.coinegg import coinegg                            # noqa: F401
 from ccxt.coinex import coinex                              # noqa: F401
 from ccxt.coinfalcon import coinfalcon                      # noqa: F401
+from ccxt.coinflex import coinflex                          # noqa: F401
 from ccxt.coinfloor import coinfloor                        # noqa: F401
 from ccxt.coingi import coingi                              # noqa: F401
 from ccxt.coinmarketcap import coinmarketcap                # noqa: F401
@@ -163,7 +166,6 @@ from ccxt.liquid import liquid                              # noqa: F401
 from ccxt.livecoin import livecoin                          # noqa: F401
 from ccxt.luno import luno                                  # noqa: F401
 from ccxt.lykke import lykke                                # noqa: F401
-from ccxt.mandala import mandala                            # noqa: F401
 from ccxt.mercado import mercado                            # noqa: F401
 from ccxt.mixcoins import mixcoins                          # noqa: F401
 from ccxt.oceanex import oceanex                            # noqa: F401
@@ -173,6 +175,7 @@ from ccxt.okex import okex                                  # noqa: F401
 from ccxt.okex3 import okex3                                # noqa: F401
 from ccxt.paymium import paymium                            # noqa: F401
 from ccxt.poloniex import poloniex                          # noqa: F401
+from ccxt.probit import probit                              # noqa: F401
 from ccxt.rightbtc import rightbtc                          # noqa: F401
 from ccxt.southxchange import southxchange                  # noqa: F401
 from ccxt.stex import stex                                  # noqa: F401
@@ -186,7 +189,6 @@ from ccxt.timex import timex                                # noqa: F401
 from ccxt.upbit import upbit                                # noqa: F401
 from ccxt.vaultoro import vaultoro                          # noqa: F401
 from ccxt.vbtc import vbtc                                  # noqa: F401
-from ccxt.virwox import virwox                              # noqa: F401
 from ccxt.whitebit import whitebit                          # noqa: F401
 from ccxt.xbtce import xbtce                                # noqa: F401
 from ccxt.yobit import yobit                                # noqa: F401
@@ -209,6 +211,7 @@ exchanges = [
     'bit2c',
     'bitbank',
     'bitbay',
+    'bitcoincom',
     'bitfinex',
     'bitfinex2',
     'bitflyer',
@@ -245,9 +248,11 @@ exchanges = [
     'coinbaseprime',
     'coinbasepro',
     'coincheck',
+    'coindcx',
     'coinegg',
     'coinex',
     'coinfalcon',
+    'coinflex',
     'coinfloor',
     'coingi',
     'coinmarketcap',
@@ -290,7 +295,6 @@ exchanges = [
     'livecoin',
     'luno',
     'lykke',
-    'mandala',
     'mercado',
     'mixcoins',
     'oceanex',
@@ -300,6 +304,7 @@ exchanges = [
     'okex3',
     'paymium',
     'poloniex',
+    'probit',
     'rightbtc',
     'southxchange',
     'stex',
@@ -313,7 +318,6 @@ exchanges = [
     'upbit',
     'vaultoro',
     'vbtc',
-    'virwox',
     'whitebit',
     'xbtce',
     'yobit',

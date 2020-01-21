@@ -465,6 +465,7 @@ declare module 'ccxt' {
     export class bit2c extends Exchange {}
     export class bitbank extends Exchange {}
     export class bitbay extends Exchange {}
+    export class bitcoincom extends hitbtc2 {}
     export class bitfinex extends Exchange {}
     export class bitfinex2 extends bitfinex {}
     export class bitflyer extends Exchange {}
@@ -501,9 +502,11 @@ declare module 'ccxt' {
     export class coinbaseprime extends coinbasepro {}
     export class coinbasepro extends Exchange {}
     export class coincheck extends Exchange {}
+    export class coindcx extends Exchange {}
     export class coinegg extends Exchange {}
     export class coinex extends Exchange {}
     export class coinfalcon extends Exchange {}
+    export class coinflex extends Exchange {}
     export class coinfloor extends Exchange {}
     export class coingi extends Exchange {}
     export class coinmarketcap extends Exchange {}
@@ -546,7 +549,6 @@ declare module 'ccxt' {
     export class livecoin extends Exchange {}
     export class luno extends Exchange {}
     export class lykke extends Exchange {}
-    export class mandala extends Exchange {}
     export class mercado extends Exchange {}
     export class mixcoins extends Exchange {}
     export class oceanex extends Exchange {}
@@ -556,6 +558,7 @@ declare module 'ccxt' {
     export class okex3 extends Exchange {}
     export class paymium extends Exchange {}
     export class poloniex extends Exchange {}
+    export class probit extends Exchange {}
     export class rightbtc extends Exchange {}
     export class southxchange extends Exchange {}
     export class stex extends Exchange {}
@@ -569,7 +572,6 @@ declare module 'ccxt' {
     export class upbit extends Exchange {}
     export class vaultoro extends Exchange {}
     export class vbtc extends foxbit {}
-    export class virwox extends Exchange {}
     export class whitebit extends Exchange {}
     export class xbtce extends Exchange {}
     export class yobit extends Exchange {}
