@@ -498,7 +498,9 @@
     "coindcx.com",
     "CoinDCX",
     "probit.com",
-    "ProBit"
+    "ProBit",
+    "phemex.com",
+    "Phemex"
   ],
   "collective": {
     "type": "opencollective",

@@ -149,6 +149,7 @@ const exchanges = {
     'okex':                    require ('./js/okex.js'),
     'okex3':                   require ('./js/okex3.js'),
     'paymium':                 require ('./js/paymium.js'),
+    'phemex':                  require ('./js/phemex.js'),
     'poloniex':                require ('./js/poloniex.js'),
     'probit':                  require ('./js/probit.js'),
     'rightbtc':                require ('./js/rightbtc.js'),
