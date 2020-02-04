@@ -191,6 +191,7 @@ class Exchange {
         'okex',
         'okex3',
         'paymium',
+        'phemex',
         'poloniex',
         'probit',
         'rightbtc',
