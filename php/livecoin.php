@@ -109,6 +109,7 @@ class livecoin extends Exchange {
                 'RUR' => 'RUB',
                 'SCT' => 'SpaceCoin',
                 'TPI' => 'ThaneCoin',
+                'WAX' => 'WAXP',
                 'wETT' => 'WETT',
                 'XBT' => 'Bricktox',
             ),
@@ -129,7 +130,7 @@ class livecoin extends Exchange {
                     '30' => '\\ccxt\\AuthenticationError',
                     '31' => '\\ccxt\\NotSupported',
                     '32' => '\\ccxt\\ExchangeError',
-                    '429' => '\\ccxt\\DDoSProtection',
+                    '429' => '\\ccxt\\RateLimitExceeded',
                     '503' => '\\ccxt\\ExchangeNotAvailable',
                 ),
                 'broad' => array(

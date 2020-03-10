@@ -26,6 +26,7 @@ class gateio(Exchange):
             'countries': ['CN'],
             'version': '2',
             'rateLimit': 1000,
+            'pro': True,
             'has': {
                 'CORS': False,
                 'createMarketOrder': False,
@@ -45,18 +46,18 @@ class gateio(Exchange):
                 'fetchMyTrades': True,
             },
             'timeframes': {
-                '1m': '60',
-                '5m': '300',
-                '10m': '600',
-                '15m': '900',
-                '30m': '1800',
-                '1h': '3600',
-                '2h': '7200',
-                '4h': '14400',
-                '6h': '21600',
-                '12h': '43200',
-                '1d': '86400',
-                '1w': '604800',
+                '1m': 60,
+                '5m': 300,
+                '10m': 600,
+                '15m': 900,
+                '30m': 1800,
+                '1h': 3600,
+                '2h': 7200,
+                '4h': 14400,
+                '6h': 21600,
+                '12h': 43200,
+                '1d': 86400,
+                '1w': 604800,
             },
             'urls': {
                 'logo': 'https://user-images.githubusercontent.com/1294454/31784029-0313c702-b509-11e7-9ccc-bc0da6a0e435.jpg',
@@ -79,6 +80,7 @@ class gateio(Exchange):
                         'pairs',
                         'marketinfo',
                         'marketlist',
+                        'coininfo',
                         'tickers',
                         'ticker/{id}',
                         'orderBook/{id}',
@@ -100,6 +102,7 @@ class gateio(Exchange):
                         'getOrder',
                         'openOrders',
                         'tradeHistory',
+                        'feelist',
                         'withdraw',
                     ],
                 },
@@ -174,7 +177,7 @@ class gateio(Exchange):
         for i in range(0, len(markets)):
             market = markets[i]
             keys = list(market.keys())
-            id = keys[0]
+            id = self.safe_string(keys, 0)
             details = market[id]
             # all of their symbols are separated with an underscore
             # but not boe_eth_eth(BOE_ETH/ETH) which has two underscores
@@ -364,6 +367,18 @@ class gateio(Exchange):
         return self.parse_ticker(ticker, market)
 
     def parse_trade(self, trade, market=None):
+        # {
+        #     "tradeID": 3175762,
+        #     "date": "2017-08-25 07:24:28",
+        #     "type": "sell",
+        #     "rate": 29011,
+        #     "amount": 0.0019,
+        #     "total": 55.1209,
+        #     "fee": "0",
+        #     "fee_coin": "btc",
+        #     "gt_fee":"0",
+        #     "point_fee":"0.1213",
+        # },
         timestamp = self.safe_timestamp_2(trade, 'timestamp', 'time_unix')
         timestamp = self.safe_timestamp(trade, 'time', timestamp)
         id = self.safe_string_2(trade, 'tradeID', 'id')
@@ -372,6 +387,7 @@ class gateio(Exchange):
         price = self.safe_float_2(trade, 'rate', 'price')
         amount = self.safe_float(trade, 'amount')
         type = self.safe_string(trade, 'type')
+        takerOrMaker = self.safe_string(trade, 'role')
         cost = None
         if price is not None:
             if amount is not None:
@@ -379,6 +395,22 @@ class gateio(Exchange):
         symbol = None
         if market is not None:
             symbol = market['symbol']
+        fee = None
+        feeCurrency = self.safe_currency_code(self.safe_string(trade, 'fee_coin'))
+        feeCost = self.safe_float(trade, 'point_fee')
+        if (feeCost is None) or (feeCost == 0):
+            feeCost = self.safe_float(trade, 'gt_fee')
+            if (feeCost is None) or (feeCost == 0):
+                feeCost = self.safe_float(trade, 'fee')
+            else:
+                feeCurrency = self.safe_currency_code('GT')
+        else:
+            feeCurrency = self.safe_currency_code('POINT')
+        if feeCost is not None:
+            fee = {
+                'cost': feeCost,
+                'currency': feeCurrency,
+            }
         return {
             'id': id,
             'info': trade,
@@ -388,11 +420,11 @@ class gateio(Exchange):
             'order': orderId,
             'type': None,
             'side': type,
-            'takerOrMaker': None,
+            'takerOrMaker': takerOrMaker,
             'price': price,
             'amount': amount,
             'cost': cost,
-            'fee': None,
+            'fee': fee,
         }
 
     def fetch_trades(self, symbol, since=None, limit=None, params={}):
@@ -683,6 +715,8 @@ class gateio(Exchange):
         txid = self.safe_string(transaction, 'txid')
         amount = self.safe_float(transaction, 'amount')
         address = self.safe_string(transaction, 'address')
+        if address == 'false':
+            address = None
         timestamp = self.safe_timestamp(transaction, 'timestamp')
         status = self.parse_transaction_status(self.safe_string(transaction, 'status'))
         type = self.parse_transaction_type(id[0])
