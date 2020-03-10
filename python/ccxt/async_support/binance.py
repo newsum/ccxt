@@ -8,12 +8,14 @@ import math
 import json
 from ccxt.base.errors import ExchangeError
 from ccxt.base.errors import AuthenticationError
+from ccxt.base.errors import PermissionDenied
 from ccxt.base.errors import ArgumentsRequired
 from ccxt.base.errors import InsufficientFunds
 from ccxt.base.errors import InvalidAddress
 from ccxt.base.errors import InvalidOrder
 from ccxt.base.errors import OrderNotFound
 from ccxt.base.errors import DDoSProtection
+from ccxt.base.errors import RateLimitExceeded
 from ccxt.base.errors import ExchangeNotAvailable
 from ccxt.base.errors import InvalidNonce
 from ccxt.base.decimal_to_precision import ROUND
@@ -28,6 +30,7 @@ class binance(Exchange):
             'countries': ['JP', 'MT'],  # Japan, Malta
             'rateLimit': 500,
             'certified': True,
+            'pro': True,
             # new metainfo interface
             'has': {
                 'fetchDepositAddress': True,
@@ -97,6 +100,7 @@ class binance(Exchange):
                 # the API structure below will need 3-layer apidefs
                 'sapi': {
                     'get': [
+                        'accountSnapshot',
                         # these endpoints require self.apiKey
                         'margin/asset',
                         'margin/pair',
@@ -120,15 +124,44 @@ class binance(Exchange):
                         'futures/transfer',
                         # https://binance-docs.github.io/apidocs/spot/en/#withdraw-sapi
                         'capital/config/getall',  # get networks for withdrawing USDT ERC20 vs USDT Omni
+                        'capital/deposit/address',
+                        'capital/deposit/hisrec',
+                        'capital/deposit/subAddress',
+                        'capital/deposit/subHisrec',
+                        'capital/withdraw/history',
+                        'sub-account/futures/account',
+                        'sub-account/futures/accountSummary',
+                        'sub-account/futures/positionRisk',
+                        'sub-account/margin/account',
+                        'sub-account/margin/accountSummary',
+                        'sub-account/status',
+                        # lending endpoints
+                        'lending/daily/product/list',
+                        'lending/daily/userLeftQuota',
+                        'lending/daily/userRedemptionQuota',
+                        'lending/daily/token/position',
+                        'lending/union/account',
+                        'lending/union/purchaseRecord',
+                        'lending/union/redemptionRecord',
+                        'lending/union/interestHistory',
                     ],
                     'post': [
                         'asset/dust',
+                        'account/disableFastWithdrawSwitch',
+                        'account/enableFastWithdrawSwitch',
+                        'capital/withdraw/apply',
                         'margin/transfer',
                         'margin/loan',
                         'margin/repay',
                         'margin/order',
+                        'sub-account/margin/enable',
+                        'sub-account/margin/enable',
+                        'sub-account/futures/enable',
                         'userDataStream',
                         'futures/transfer',
+                        # lending
+                        'lending/daily/purchase',
+                        'lending/daily/redeem',
                     ],
                     'put': [
                         'userDataStream',
@@ -168,18 +201,18 @@ class binance(Exchange):
                         'historicalTrades',
                         'aggTrades',
                         'klines',
+                        'fundingRate',
                         'premiumIndex',
                         'ticker/24hr',
                         'ticker/price',
                         'ticker/bookTicker',
+                        'leverageBracket',
                     ],
-                    'put': ['listenKey'],
-                    'post': ['listenKey'],
-                    'delete': ['listenKey'],
                 },
                 'fapiPrivate': {
                     'get': [
                         'allOrders',
+                        'openOrder',
                         'openOrders',
                         'order',
                         'account',
@@ -194,9 +227,15 @@ class binance(Exchange):
                         'marginType',
                         'order',
                         'leverage',
+                        'listenKey',
+                    ],
+                    'put': [
+                        'listenKey',
                     ],
                     'delete': [
                         'order',
+                        'allOpenOrders',
+                        'listenKey',
                     ],
                 },
                 'v3': {
@@ -259,7 +298,7 @@ class binance(Exchange):
             },
             # exchange-specific options
             'options': {
-                'fetchTradesMethod': 'publicGetAggTrades',
+                'fetchTradesMethod': 'publicGetAggTrades',  # publicGetTrades, publicGetHistoricalTrades
                 'fetchTickersMethod': 'publicGetTicker24hr',
                 'defaultTimeInForce': 'GTC',  # 'GTC' = Good To Cancel(default), 'IOC' = Immediate Or Cancel
                 'defaultLimitOrderType': 'limit',  # or 'limit_maker'
@@ -280,7 +319,10 @@ class binance(Exchange):
                 'Order would trigger immediately.': InvalidOrder,
                 'Account has insufficient balance for requested action.': InsufficientFunds,
                 'Rest API trading is not enabled.': ExchangeNotAvailable,
+                "You don't have permission.": PermissionDenied,  # {"msg":"You don't have permission.","success":false}
+                'Market is closed.': ExchangeNotAvailable,  # {"code":-1013,"msg":"Market is closed."}
                 '-1000': ExchangeNotAvailable,  # {"code":-1000,"msg":"An unknown error occured while processing the request."}
+                '-1003': RateLimitExceeded,  # {"code":-1003,"msg":"Too much request weight used, current limit is 1200 request weight per 1 MINUTE. Please use the websocket for live updates to avoid polling the API."}
                 '-1013': InvalidOrder,  # createOrder -> 'invalid quantity'/'invalid price'/MIN_NOTIONAL
                 '-1021': InvalidNonce,  # 'your time is ahead of server'
                 '-1022': AuthenticationError,  # {"code":-1022,"msg":"Signature for self request is not valid."}
@@ -302,12 +344,12 @@ class binance(Exchange):
         type = self.safe_string_2(self.options, 'fetchTime', 'defaultType', 'spot')
         method = 'publicGetTime' if (type == 'spot') else 'fapiPublicGetTime'
         response = await getattr(self, method)(params)
-        return self.safe_float(response, 'serverTime')
+        return self.safe_integer(response, 'serverTime')
 
     async def load_time_difference(self):
         serverTime = await self.fetch_time()
         after = self.milliseconds()
-        self.options['timeDifference'] = int(after - serverTime)
+        self.options['timeDifference'] = after - serverTime
         return self.options['timeDifference']
 
     async def fetch_markets(self, params={}):
@@ -402,6 +444,7 @@ class binance(Exchange):
             spot = not future
             marketType = 'spot' if spot else 'future'
             id = self.safe_string(market, 'symbol')
+            lowercaseId = self.safe_string_lower(market, 'symbol')
             baseId = market['baseAsset']
             quoteId = market['quoteAsset']
             base = self.safe_currency_code(baseId)
@@ -418,6 +461,7 @@ class binance(Exchange):
             active = (status == 'TRADING')
             entry = {
                 'id': id,
+                'lowercaseId': lowercaseId,
                 'symbol': symbol,
                 'base': base,
                 'quote': quote,
@@ -817,10 +861,21 @@ class binance(Exchange):
             # 'endTime': 789,   # Timestamp in ms to get aggregate trades until INCLUSIVE.
             # 'limit': 500,     # default = 500, maximum = 1000
         }
-        if self.options['fetchTradesMethod'] == 'publicGetAggTrades':
+        defaultType = self.safe_string_2(self.options, 'fetchTrades', 'defaultType', 'spot')
+        type = self.safe_string(params, 'type', defaultType)
+        query = self.omit(params, 'type')
+        defaultMethod = 'fapiPublicGetTrades' if (type == 'future') else 'publicGetTrades'
+        method = self.safe_string(self.options, 'fetchTradesMethod', defaultMethod)
+        if method == 'publicGetAggTrades':
             if since is not None:
                 request['startTime'] = since
+                # https://github.com/ccxt/ccxt/issues/6400
+                # https://github.com/binance-exchange/binance-official-api-docs/blob/master/rest-api.md#compressedaggregate-trades-list
                 request['endTime'] = self.sum(since, 3600000)
+            if type == 'future':
+                method = 'fapiPublicGetAggTrades'
+        elif (method == 'publicGetHistoricalTrades') and (type == 'future'):
+            method = 'fapiPublicGetHistoricalTrades'
         if limit is not None:
             request['limit'] = limit  # default = 500, maximum = 1000
         #
@@ -832,8 +887,7 @@ class binance(Exchange):
         # - 'tradeId' accepted and returned by self method is "aggregate" trade id
         #   which is different from actual trade id
         # - setting both fromId and time window results in error
-        method = self.safe_value(self.options, 'fetchTradesMethod', 'publicGetTrades')
-        response = await getattr(self, method)(self.extend(request, params))
+        response = await getattr(self, method)(self.extend(request, query))
         #
         # aggregate trades
         #
@@ -978,10 +1032,19 @@ class binance(Exchange):
             raise InvalidOrder(self.id + ' ' + type + ' is not a valid order type in ' + market['type'] + ' market ' + symbol)
         request = {
             'symbol': market['id'],
-            'quantity': self.amount_to_precision(symbol, amount),
             'type': uppercaseType,
             'side': side.upper(),
         }
+        if uppercaseType == 'MARKET':
+            quoteOrderQty = self.safe_float(params, 'quoteOrderQty')
+            if quoteOrderQty is not None:
+                request['quoteOrderQty'] = self.cost_to_precision(symbol, quoteOrderQty)
+            elif price is not None:
+                request['quoteOrderQty'] = self.cost_to_precision(symbol, amount * price)
+            else:
+                request['quantity'] = self.amount_to_precision(symbol, amount)
+        else:
+            request['quantity'] = self.amount_to_precision(symbol, amount)
         if market['spot']:
             request['newOrderRespType'] = self.safe_value(self.options['newOrderRespType'], type, 'RESULT')  # 'ACK' for order id, 'RESULT' for full order or 'FULL' for order with fills
         timeInForceIsRequired = False
@@ -992,6 +1055,8 @@ class binance(Exchange):
             timeInForceIsRequired = True
         elif (uppercaseType == 'STOP_LOSS') or (uppercaseType == 'TAKE_PROFIT'):
             stopPriceIsRequired = True
+            if market['future']:
+                priceIsRequired = True
         elif (uppercaseType == 'STOP_LOSS_LIMIT') or (uppercaseType == 'TAKE_PROFIT_LIMIT'):
             stopPriceIsRequired = True
             priceIsRequired = True
@@ -1125,11 +1190,17 @@ class binance(Exchange):
             raise ArgumentsRequired(self.id + ' cancelOrder requires a symbol argument')
         await self.load_markets()
         market = self.market(symbol)
+        # https://github.com/ccxt/ccxt/issues/6507
+        origClientOrderId = self.safe_value(params, 'origClientOrderId')
         request = {
             'symbol': market['id'],
-            'orderId': int(id),
+            # 'orderId': int(id),
             # 'origClientOrderId': id,
         }
+        if origClientOrderId is None:
+            request['orderId'] = int(id)
+        else:
+            request['origClientOrderId'] = origClientOrderId
         method = 'privateDeleteOrder' if market['spot'] else 'fapiPrivateDeleteOrder'
         response = await getattr(self, method)(self.extend(request, params))
         return self.parse_order(response)
@@ -1295,6 +1366,8 @@ class binance(Exchange):
             request['asset'] = currency['id']
         if since is not None:
             request['startTime'] = since
+            # max 3 months range https://github.com/ccxt/ccxt/issues/6495
+            request['endTime'] = self.sum(since, 7776000000)
         response = await self.wapiGetDepositHistory(self.extend(request, params))
         #
         #     {    success:    True,
@@ -1317,6 +1390,8 @@ class binance(Exchange):
             request['asset'] = currency['id']
         if since is not None:
             request['startTime'] = since
+            # max 3 months range https://github.com/ccxt/ccxt/issues/6495
+            request['endTime'] = self.sum(since, 7776000000)
         response = await self.wapiGetWithdrawHistory(self.extend(request, params))
         #
         #     {withdrawList: [{     amount:  14,
@@ -1578,24 +1653,37 @@ class binance(Exchange):
         url += '/' + path
         if api == 'wapi':
             url += '.html'
-        userDataStream = ((path == 'userDataStream') or (path == 'listenKey'))
+        userDataStream = (path == 'userDataStream')
         if path == 'historicalTrades':
-            headers = {
-                'X-MBX-APIKEY': self.apiKey,
-            }
+            if self.apiKey:
+                headers = {
+                    'X-MBX-APIKEY': self.apiKey,
+                }
+            else:
+                raise AuthenticationError(self.id + ' historicalTrades endpoint requires `apiKey` credential')
         elif userDataStream:
-            # v1 special case for userDataStream
-            body = self.urlencode(params)
-            headers = {
-                'X-MBX-APIKEY': self.apiKey,
-                'Content-Type': 'application/x-www-form-urlencoded',
-            }
+            if self.apiKey:
+                # v1 special case for userDataStream
+                body = self.urlencode(params)
+                headers = {
+                    'X-MBX-APIKEY': self.apiKey,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                }
+            else:
+                raise AuthenticationError(self.id + ' userDataStream endpoint requires `apiKey` credential')
         if (api == 'private') or (api == 'sapi') or (api == 'wapi' and path != 'systemStatus') or (api == 'fapiPrivate'):
             self.check_required_credentials()
-            query = self.urlencode(self.extend({
-                'timestamp': self.nonce(),
-                'recvWindow': self.options['recvWindow'],
-            }, params))
+            query = None
+            if (api == 'sapi') and (path == 'asset/dust'):
+                query = self.urlencode_with_array_repeat(self.extend({
+                    'timestamp': self.nonce(),
+                    'recvWindow': self.options['recvWindow'],
+                }, params))
+            else:
+                query = self.urlencode(self.extend({
+                    'timestamp': self.nonce(),
+                    'recvWindow': self.options['recvWindow'],
+                }, params))
             signature = self.hmac(self.encode(query), self.encode(self.secret))
             query += '&' + 'signature=' + signature
             headers = {
@@ -1650,6 +1738,9 @@ class binance(Exchange):
                 # checks against error codes
                 error = self.safe_string(response, 'code')
                 if error is not None:
+                    # https://github.com/ccxt/ccxt/issues/6501
+                    if error == '200':
+                        return
                     # a workaround for {"code":-2015,"msg":"Invalid API-key, IP, or permissions for action."}
                     # despite that their message is very confusing, it is raised by Binance
                     # on a temporary ban(the API key is valid, but disabled for a while)

@@ -35,7 +35,7 @@ use kornrunner\Solidity;
 use Elliptic\EC;
 use BN\BN;
 
-$version = '1.21.62';
+$version = '1.23.85';
 
 // rounding mode
 const TRUNCATE = 0;
@@ -54,40 +54,12 @@ const PAD_WITH_ZERO = 1;
 
 class Exchange {
 
-    const VERSION = '1.21.62';
-
-    public static $eth_units = array (
-        'wei'        => '1',
-        'kwei'       => '1000',
-        'babbage'    => '1000',
-        'femtoether' => '1000',
-        'mwei'       => '1000000',
-        'lovelace'   => '1000000',
-        'picoether'  => '1000000',
-        'gwei'       => '1000000000',
-        'nano'       => '1000000000',
-        'shannon'    => '1000000000',
-        'nanoether'  => '1000000000',
-        'szabo'      => '1000000000000',
-        'micro'      => '1000000000000',
-        'microether' => '1000000000000',
-        'finney'     => '1000000000000000',
-        'milli'      => '1000000000000000',
-        'milliether' => '1000000000000000',
-        'ether'      => '1000000000000000000',
-        'kether'     => '1000000000000000000000',
-        'einstein'   => '1000000000000000000000',
-        'grand'      => '1000000000000000000000',
-        'mether'     => '1000000000000000000000000',
-        'gether'     => '1000000000000000000000000000',
-        'tether'     => '1000000000000000000000000000000',
-    );
+    const VERSION = '1.23.85';
 
     public static $exchanges = array(
         '_1btcxe',
         'acx',
         'adara',
-        'allcoin',
         'anxpro',
         'bcex',
         'bequant',
@@ -165,6 +137,7 @@ class Exchange {
         'gemini',
         'hitbtc',
         'hitbtc2',
+        'hollaex',
         'huobipro',
         'huobiru',
         'ice3x',
@@ -204,6 +177,7 @@ class Exchange {
         'tidebit',
         'tidex',
         'timex',
+        'topq',
         'upbit',
         'vaultoro',
         'vbtc',
@@ -764,6 +738,10 @@ class Exchange {
         return true;
     }
 
+    public function checkRequiredCredentials($error = true) {
+        return $this->check_required_credentials($error);
+    }
+
     public function check_address($address) {
         if (empty($address) || !is_string($address)) {
             throw new InvalidAddress($this->id . ' address is undefined');
@@ -836,6 +814,7 @@ class Exchange {
         $this->countries = null;
         $this->version = null;
         $this->certified = false;
+        $this->pro = false;
         $this->urls = array();
         $this->api = array();
         $this->comment = null;
@@ -846,11 +825,13 @@ class Exchange {
         $this->currencies = array();
         $this->balance = array();
         $this->orderbooks = array();
+        $this->tickers = array();
         $this->fees = array('trading' => array(), 'funding' => array());
         $this->precision = array();
         $this->orders = array();
         $this->trades = array();
         $this->transactions = array();
+        $this->ohlcvs = array();
         $this->exceptions = array();
         $this->accounts = array();
         $this->status = array('status' => 'ok', 'updated' => null, 'eta' => null, 'url' => null);
@@ -871,9 +852,10 @@ class Exchange {
         $this->httpExceptions = array(
             '422' => 'ExchangeError',
             '418' => 'DDoSProtection',
-            '429' => 'DDoSProtection',
+            '429' => 'RateLimitExceeded',
             '404' => 'ExchangeNotAvailable',
             '409' => 'ExchangeNotAvailable',
+            '410' => 'ExchangeNotAvailable',
             '500' => 'ExchangeNotAvailable',
             '501' => 'ExchangeNotAvailable',
             '502' => 'ExchangeNotAvailable',
@@ -950,6 +932,7 @@ class Exchange {
             'fetchOHLCV' => 'emulated',
             'fetchOpenOrders' => false,
             'fetchOrder' => false,
+            'fetchOrderTrades' => false,
             'fetchOrderBook' => true,
             'fetchOrderBooks' => false,
             'fetchOrders' => false,
@@ -1637,7 +1620,7 @@ class Exchange {
     }
 
     public function parse_balance($balance) {
-        $currencies = $this->omit($balance, 'info');
+        $currencies = $this->omit($balance, array('info', 'free', 'used', 'total'));
 
         $balance['free'] = array();
         $balance['used'] = array();
@@ -1646,28 +1629,22 @@ class Exchange {
         foreach ($currencies as $code => $value) {
             if (!isset($value['total'])) {
                 if (isset($value['free']) && isset($value['used'])) {
-                    $currencies[$code]['total'] = static::sum($value['free'], $value['used']);
+                    $balance[$code]['total'] = static::sum($value['free'], $value['used']);
                 }
             }
             if (!isset($value['used'])) {
                 if (isset($value['total']) && isset($value['free'])) {
-                    $currencies[$code]['used'] = static::sum($value['total'], -$value['free']);
+                    $balance[$code]['used'] = static::sum($value['total'], -$value['free']);
                 }
             }
             if (!isset($value['free'])) {
                 if (isset($value['total']) && isset($value['used'])) {
-                    $currencies[$code]['free'] = static::sum($value['total'], -$value['used']);
+                    $balance[$code]['free'] = static::sum($value['total'], -$value['used']);
                 }
             }
-        }
-
-        $accounts = array('free', 'used', 'total');
-        foreach ($accounts as $account) {
-            $balance[$account] = array();
-            foreach ($currencies as $code => $value) {
-                $balance[$code] = isset($balance[$code]) ? $balance[$code] : array();
-                $balance[$code][$account] = $balance[$account][$code] = $value[$account];
-            }
+            $balance['free'][$code] = $balance[$code]['free'];
+            $balance['used'][$code] = $balance[$code]['used'];
+            $balance['total'][$code] = $balance[$code]['total'];
         }
         return $balance;
     }
@@ -1732,11 +1709,11 @@ class Exchange {
         return $this->markets;
     }
 
-    public function filter_by_since_limit($array, $since = null, $limit = null) {
+    public function filter_by_since_limit($array, $since = null, $limit = null, $key = 'timestamp') {
         $result = array();
         $array = array_values($array);
         foreach ($array as $entry) {
-            if ($entry['timestamp'] > $since) {
+            if ($entry[$key] > $since) {
                 $result[] = $entry;
             }
         }
@@ -1746,8 +1723,8 @@ class Exchange {
         return $result;
     }
 
-    public function filterBySinceLimit($array, $since = null, $limit = null) {
-        return $this->filter_by_since_limit($array, $since, $limit);
+    public function filterBySinceLimit($array, $since = null, $limit = null, $key = 'timestamp') {
+        return $this->filter_by_since_limit($array, $since, $limit, $key);
     }
 
     public function parse_trades($trades, $market = null, $since = null, $limit = null, $params = array()) {
@@ -2084,7 +2061,6 @@ class Exchange {
             $this->status = array_merge($this->status, array(
                 'updated' => $time,
             ));
-            return $this->status;
         }
         return $this->status;
     }
@@ -2429,6 +2405,15 @@ class Exchange {
         return static::decimal_to_precision($x, $roundingMode, $numPrecisionDigits, $countingMode, $paddingMode);
     }
 
+    public static function precisionFromString($x) {
+        $parts = explode ('.', preg_replace ('/0+$/', '', $x));
+        if (count ($parts) > 1) {
+            return strlen ($parts[1]);
+        } else {
+            return 0;
+        }
+    }
+
     public static function decimal_to_precision($x, $roundingMode = ROUND, $numPrecisionDigits = null, $countingMode = DECIMAL_PLACES, $paddingMode = NO_PADDING) {
         if ($countingMode === TICK_SIZE) {
             if (!(is_float ($numPrecisionDigits) || is_int($numPrecisionDigits)))
@@ -2463,9 +2448,12 @@ class Exchange {
         }
 
         if ($countingMode === TICK_SIZE) {
+            $precisionDigitsString = static::decimal_to_precision ($numPrecisionDigits, ROUND, 100, DECIMAL_PLACES, NO_PADDING);
+            $newNumPrecisionDigits = static::precisionFromString ($precisionDigitsString);
             $missing = fmod($x, $numPrecisionDigits);
-            $reminder = $x / $numPrecisionDigits;
-            if ($reminder !== floor($reminder)) {
+            // See: https://github.com/ccxt/ccxt/pull/6486
+            $fpError = static::decimal_to_precision ($missing / $numPrecisionDigits, ROUND, max($newNumPrecisionDigits, 8), DECIMAL_PLACES, NO_PADDING);
+            if (static::precisionFromString ($fpError) !== 0) {
                 if ($roundingMode === ROUND) {
                     if ($x > 0) {
                         if ($missing >= $numPrecisionDigits / 2) {
@@ -2484,13 +2472,6 @@ class Exchange {
                     $x = $x - $missing;
                 }
             }
-            $precisionDigitsString = static::decimal_to_precision ($numPrecisionDigits, ROUND, 100, DECIMAL_PLACES, NO_PADDING);
-            $parts = explode ('.', preg_replace ('/0+$/', '', $precisionDigitsString));
-            if (count ($parts) > 1) {
-                $newNumPrecisionDigits = strlen ($parts[1]);
-            } else {
-                $newNumPrecisionDigits = strlen (preg_replace ('/0+$/', '', $parts[0]));
-            }
             return static::decimal_to_precision ($x, ROUND, $newNumPrecisionDigits, DECIMAL_PLACES, $paddingMode);
         }
 
@@ -2505,7 +2486,7 @@ class Exchange {
                 if ($significantPosition > 0) {
                     ++$significantPosition;
                 }
-                $result = (string) round($x, $numPrecisionDigits - $significantPosition, PHP_ROUND_HALF_UP);
+                $result = static::number_to_string(round($x, $numPrecisionDigits - $significantPosition, PHP_ROUND_HALF_UP));
             }
         } elseif ($roundingMode === TRUNCATE) {
             $dotIndex = strpos($x, '.');
@@ -2617,73 +2598,18 @@ class Exchange {
         }
     }
 
-    public function eth_decimals($unit = 'ether') {
-        $units = array(
-            'wei' => 0,          // 1
-            'kwei' => 3,         // 1000
-            'babbage' => 3,      // 1000
-            'femtoether' => 3,   // 1000
-            'mwei' => 6,         // 1000000
-            'lovelace' => 6,     // 1000000
-            'picoether' => 6,    // 1000000
-            'gwei' => 9,         // 1000000000
-            'shannon' => 9,      // 1000000000
-            'nanoether' => 9,    // 1000000000
-            'nano' => 9,         // 1000000000
-            'szabo' => 12,       // 1000000000000
-            'microether' => 12,  // 1000000000000
-            'micro' => 12,       // 1000000000000
-            'finney' => 15,      // 1000000000000000
-            'milliether' => 15,  // 1000000000000000
-            'milli' => 15,       // 1000000000000000
-            'ether' => 18,       // 1000000000000000000
-            'kether' => 21,      // 1000000000000000000000
-            'grand' => 21,       // 1000000000000000000000
-            'mether' => 24,      // 1000000000000000000000000
-            'gether' => 27,      // 1000000000000000000000000000
-            'tether' => 30,      // 1000000000000000000000000000000
-        );
-        return $this->safe_value($units, $unit);
+    public static function fromWei($amount, $decimals = 18) {
+        $exponential = sprintf('%e', $amount);
+        list($n, $exponent) = explode('e', $exponential);
+        $new_exponent = intval($exponent) - $decimals;
+        return floatval($n . 'e' . strval($new_exponent));
     }
 
-    public function ethDecimals($unit = 'ether') {
-        return $this->eth_decimals($unit);
-    }
-
-    public function eth_unit($decimals = 18) {
-        $units = array(
-            0 => 'wei',      // 1000000000000000000
-            3 => 'kwei',     // 1000000000000000
-            6 => 'mwei',     // 1000000000000
-            9 => 'gwei',     // 1000000000
-            12 => 'szabo',   // 1000000
-            15 => 'finney',  // 1000
-            18 => 'ether',   // 1
-            21 => 'kether',  // 0.001
-            24 => 'mether',  // 0.000001
-            27 => 'gether',  // 0.000000001
-            30 => 'tether',  // 0.000000000001
-        );
-        return $this->safe_value($units, (int) $decimals);
-    }
-
-    public function ethUnit($decimals = 18) {
-        return $this->eth_unit($decimals);
-    }
-
-    public function fromWei($amount, $unit = 'ether', $decimals = 18) {
-        if (!isset(Exchange::$eth_units[$unit])) {
-            throw new \UnexpectedValueException("Unknown unit '" . $unit . "', supported units: " . implode(', ', array_keys(Exchange::$eth_units)));
-        }
-        $denominator = substr_count(Exchange::$eth_units[$unit], 0) + strlen($amount) - strpos($amount, '.') - 1;
-        return (float) (('wei' === $unit) ? $amount : bcdiv($amount, Exchange::$eth_units[$unit], $denominator));
-    }
-
-    public function toWei($amount, $unit = 'ether', $decimals = 18) {
-        if (!isset(Exchange::$eth_units[$unit])) {
-            throw new \UnexpectedValueException("Unknown unit '" . $unit . "', supported units: " . implode(', ', array_keys(Exchange::$eth_units)));
-        }
-        return (('wei' === $unit) ? (string) (int) $amount : bcmul($amount, Exchange::$eth_units[$unit]));
+    public static function toWei($amount, $decimals = 18) {
+        $exponential = sprintf('%e', $amount);
+        list($n, $exponent) = explode('e', $exponential);
+        $new_exponent = intval($exponent) + $decimals;
+        return static::number_to_string(floatval($n . 'e' . strval($new_exponent)));
     }
 
     public function getZeroExOrderHash($order) {
@@ -2734,15 +2660,6 @@ class Exchange {
         //     'uint256', // { value: bigNumberToBN(order.salt), type: types_1.SolidityTypes.Uint256 },
         // );
         return call_user_func_array('\kornrunner\Solidity::sha3', $unpacked);
-    }
-
-    public function signZeroExOrder($order, $privateKey) {
-        $orderHash = $this->getZeroExOrderHash($order);
-        $signature = $this->signMessage($orderHash, $privateKey);
-        return array_merge($order, array(
-            'orderHash' => $orderHash,
-            'ecSignature' => $signature, // todo fix v if needed
-        ));
     }
 
     public static function hashMessage($message) {

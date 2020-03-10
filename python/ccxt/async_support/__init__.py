@@ -4,7 +4,7 @@
 
 # -----------------------------------------------------------------------------
 
-__version__ = '1.21.62'
+__version__ = '1.23.85'
 
 # -----------------------------------------------------------------------------
 
@@ -51,7 +51,6 @@ from ccxt.base.errors import OrderNotFillable                   # noqa: F401
 from ccxt.async_support._1btcxe import _1btcxe                            # noqa: F401
 from ccxt.async_support.acx import acx                                    # noqa: F401
 from ccxt.async_support.adara import adara                                # noqa: F401
-from ccxt.async_support.allcoin import allcoin                            # noqa: F401
 from ccxt.async_support.anxpro import anxpro                              # noqa: F401
 from ccxt.async_support.bcex import bcex                                  # noqa: F401
 from ccxt.async_support.bequant import bequant                            # noqa: F401
@@ -129,6 +128,7 @@ from ccxt.async_support.gateio import gateio                              # noqa
 from ccxt.async_support.gemini import gemini                              # noqa: F401
 from ccxt.async_support.hitbtc import hitbtc                              # noqa: F401
 from ccxt.async_support.hitbtc2 import hitbtc2                            # noqa: F401
+from ccxt.async_support.hollaex import hollaex                            # noqa: F401
 from ccxt.async_support.huobipro import huobipro                          # noqa: F401
 from ccxt.async_support.huobiru import huobiru                            # noqa: F401
 from ccxt.async_support.ice3x import ice3x                                # noqa: F401
@@ -168,6 +168,7 @@ from ccxt.async_support.therock import therock                            # noqa
 from ccxt.async_support.tidebit import tidebit                            # noqa: F401
 from ccxt.async_support.tidex import tidex                                # noqa: F401
 from ccxt.async_support.timex import timex                                # noqa: F401
+from ccxt.async_support.topq import topq                                  # noqa: F401
 from ccxt.async_support.upbit import upbit                                # noqa: F401
 from ccxt.async_support.vaultoro import vaultoro                          # noqa: F401
 from ccxt.async_support.vbtc import vbtc                                  # noqa: F401
@@ -181,7 +182,6 @@ exchanges = [
     '_1btcxe',
     'acx',
     'adara',
-    'allcoin',
     'anxpro',
     'bcex',
     'bequant',
@@ -259,6 +259,7 @@ exchanges = [
     'gemini',
     'hitbtc',
     'hitbtc2',
+    'hollaex',
     'huobipro',
     'huobiru',
     'ice3x',
@@ -298,6 +299,7 @@ exchanges = [
     'tidebit',
     'tidex',
     'timex',
+    'topq',
     'upbit',
     'vaultoro',
     'vbtc',
