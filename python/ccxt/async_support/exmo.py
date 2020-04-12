@@ -438,6 +438,7 @@ class exmo(Exchange):
                     '40015': ExchangeError,  # API function do not exist
                     '40016': OnMaintenance,  # {"result":false,"error":"Error 40016: Maintenance work in progress"}
                     '40017': AuthenticationError,  # Wrong API Key
+                    '40034': RateLimitExceeded,  # {"result":false,"error":"Error 40034: Access is denied, rate limit is exceeded"}
                     '50052': InsufficientFunds,
                     '50054': InsufficientFunds,
                     '50304': OrderNotFound,  # "Order was not found '123456789'"(fetching order trades for an order that does not have trades yet)
@@ -638,7 +639,7 @@ class exmo(Exchange):
         codes = list(self.currencies.keys())
         for i in range(0, len(codes)):
             code = codes[i]
-            currencyId = self.currencyId(code)
+            currencyId = self.currency_id(code)
             account = self.account()
             if currencyId in response['balances']:
                 account['free'] = self.safe_float(response['balances'], currencyId)
@@ -866,6 +867,8 @@ class exmo(Exchange):
             'filled': 0.0,
             'fee': None,
             'trades': None,
+            'clientOrderId': None,
+            'average': None,
         }
         self.orders[id] = order
         return order
@@ -1092,6 +1095,7 @@ class exmo(Exchange):
         }
         return {
             'id': id,
+            'clientOrderId': None,
             'datetime': self.iso8601(timestamp),
             'timestamp': timestamp,
             'lastTradeTimestamp': lastTradeTimestamp,

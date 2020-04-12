@@ -4,7 +4,7 @@
 
 # -----------------------------------------------------------------------------
 
-__version__ = '1.23.85'
+__version__ = '1.26.10'
 
 # -----------------------------------------------------------------------------
 
@@ -52,6 +52,7 @@ from ccxt.async_support._1btcxe import _1btcxe                            # noqa
 from ccxt.async_support.acx import acx                                    # noqa: F401
 from ccxt.async_support.adara import adara                                # noqa: F401
 from ccxt.async_support.anxpro import anxpro                              # noqa: F401
+from ccxt.async_support.aofex import aofex                                # noqa: F401
 from ccxt.async_support.bcex import bcex                                  # noqa: F401
 from ccxt.async_support.bequant import bequant                            # noqa: F401
 from ccxt.async_support.bibox import bibox                                # noqa: F401
@@ -69,7 +70,6 @@ from ccxt.async_support.bitflyer import bitflyer                          # noqa
 from ccxt.async_support.bitforex import bitforex                          # noqa: F401
 from ccxt.async_support.bithumb import bithumb                            # noqa: F401
 from ccxt.async_support.bitkk import bitkk                                # noqa: F401
-from ccxt.async_support.bitlish import bitlish                            # noqa: F401
 from ccxt.async_support.bitmart import bitmart                            # noqa: F401
 from ccxt.async_support.bitmax import bitmax                              # noqa: F401
 from ccxt.async_support.bitmex import bitmex                              # noqa: F401
@@ -83,7 +83,6 @@ from ccxt.async_support.bleutrade import bleutrade                        # noqa
 from ccxt.async_support.braziliex import braziliex                        # noqa: F401
 from ccxt.async_support.btcalpha import btcalpha                          # noqa: F401
 from ccxt.async_support.btcbox import btcbox                              # noqa: F401
-from ccxt.async_support.btcchina import btcchina                          # noqa: F401
 from ccxt.async_support.btcmarkets import btcmarkets                      # noqa: F401
 from ccxt.async_support.btctradeim import btctradeim                      # noqa: F401
 from ccxt.async_support.btctradeua import btctradeua                      # noqa: F401
@@ -94,7 +93,6 @@ from ccxt.async_support.bybit import bybit                                # noqa
 from ccxt.async_support.bytetrade import bytetrade                        # noqa: F401
 from ccxt.async_support.cex import cex                                    # noqa: F401
 from ccxt.async_support.chilebit import chilebit                          # noqa: F401
-from ccxt.async_support.cobinhood import cobinhood                        # noqa: F401
 from ccxt.async_support.coinbase import coinbase                          # noqa: F401
 from ccxt.async_support.coinbaseprime import coinbaseprime                # noqa: F401
 from ccxt.async_support.coinbasepro import coinbasepro                    # noqa: F401
@@ -150,10 +148,8 @@ from ccxt.async_support.lykke import lykke                                # noqa
 from ccxt.async_support.mercado import mercado                            # noqa: F401
 from ccxt.async_support.mixcoins import mixcoins                          # noqa: F401
 from ccxt.async_support.oceanex import oceanex                            # noqa: F401
-from ccxt.async_support.okcoincny import okcoincny                        # noqa: F401
-from ccxt.async_support.okcoinusd import okcoinusd                        # noqa: F401
+from ccxt.async_support.okcoin import okcoin                              # noqa: F401
 from ccxt.async_support.okex import okex                                  # noqa: F401
-from ccxt.async_support.okex3 import okex3                                # noqa: F401
 from ccxt.async_support.paymium import paymium                            # noqa: F401
 from ccxt.async_support.phemex import phemex                              # noqa: F401
 from ccxt.async_support.poloniex import poloniex                          # noqa: F401
@@ -183,6 +179,7 @@ exchanges = [
     'acx',
     'adara',
     'anxpro',
+    'aofex',
     'bcex',
     'bequant',
     'bibox',
@@ -200,7 +197,6 @@ exchanges = [
     'bitforex',
     'bithumb',
     'bitkk',
-    'bitlish',
     'bitmart',
     'bitmax',
     'bitmex',
@@ -214,7 +210,6 @@ exchanges = [
     'braziliex',
     'btcalpha',
     'btcbox',
-    'btcchina',
     'btcmarkets',
     'btctradeim',
     'btctradeua',
@@ -225,7 +220,6 @@ exchanges = [
     'bytetrade',
     'cex',
     'chilebit',
-    'cobinhood',
     'coinbase',
     'coinbaseprime',
     'coinbasepro',
@@ -281,10 +275,8 @@ exchanges = [
     'mercado',
     'mixcoins',
     'oceanex',
-    'okcoincny',
-    'okcoinusd',
+    'okcoin',
     'okex',
-    'okex3',
     'paymium',
     'phemex',
     'poloniex',

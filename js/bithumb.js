@@ -129,6 +129,8 @@ module.exports = class bithumb extends Exchange {
                         'max': undefined,
                     },
                 },
+                'baseId': undefined,
+                'quoteId': undefined,
             });
         }
         return result;
@@ -342,18 +344,20 @@ module.exports = class bithumb extends Exchange {
     async cancelOrder (id, symbol = undefined, params = {}) {
         const side_in_params = ('side' in params);
         if (!side_in_params) {
-            throw new ExchangeError (this.id + ' cancelOrder requires a `side` parameter (sell or buy) and a `currency` parameter');
+            throw new ExchangeError (this.id + ' cancelOrder requires a `symbol` argument and a `side` parameter (sell or buy)');
         }
-        const currency = this.safeString (params, 'currency');
-        if (currency === undefined) {
-            throw new ExchangeError (this.id + ' cancelOrder requires a `currency` parameter (a currency id)');
+        if (symbol === undefined) {
+            throw new ExchangeError (this.id + ' cancelOrder requires a `symbol` argument and a `side` parameter (sell or buy)');
         }
+        const market = this.market (symbol);
         const side = (params['side'] === 'buy') ? 'bid' : 'ask';
         params = this.omit (params, [ 'side', 'currency' ]);
+        // https://github.com/ccxt/ccxt/issues/6771
         const request = {
             'order_id': id,
             'type': side,
-            'currency': currency,
+            'order_currency': market['base'],
+            'payment_currency': market['quote'],
         };
         return await this.privatePostTradeCancel (this.extend (request, params));
     }

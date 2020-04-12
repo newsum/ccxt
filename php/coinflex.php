@@ -15,8 +15,8 @@ use \ccxt\OrderNotFound;
 
 class coinflex extends Exchange {
 
-    public function describe () {
-        return array_replace_recursive(parent::describe (), array(
+    public function describe() {
+        return $this->deep_extend(parent::describe (), array(
             'id' => 'coinflex',
             'name' => 'CoinFlex',
             'countries' => array( 'SC' ), // Seychelles
@@ -88,8 +88,8 @@ class coinflex extends Exchange {
         ));
     }
 
-    public function fetch_currencies ($params = array ()) {
-        $answer = $this->fetch_currencies_from_cache ($params);
+    public function fetch_currencies($params = array ()) {
+        $answer = $this->fetch_currencies_from_cache($params);
         $assets = $this->safe_value($answer, 'currencies');
         $result = array();
         for ($i = 0; $i < count($assets); $i++) {
@@ -126,11 +126,11 @@ class coinflex extends Exchange {
         return $result;
     }
 
-    public function fetch_currencies_from_cache ($params = array ()) {
+    public function fetch_currencies_from_cache($params = array ()) {
         $options = $this->safe_value($this->options, 'fetchCurrencies', array());
         $timestamp = $this->safe_integer($options, 'timestamp');
         $expires = $this->safe_integer($options, 'expires', 5000);
-        $now = $this->milliseconds ();
+        $now = $this->milliseconds();
         if (($timestamp === null) || (($now - $timestamp) > $expires)) {
             $currencies = $this->publicGetAssets ($params);
             $this->options['fetchCurrencies'] = array_merge($options, array(
@@ -141,21 +141,21 @@ class coinflex extends Exchange {
         return $this->safe_value($this->options, 'fetchCurrencies', array());
     }
 
-    public function fetch_markets ($params = array ()) {
+    public function fetch_markets($params = array ()) {
         $currencies = $this->fetch_currencies();
         $markets = $this->publicGetMarkets ();
         $result = array();
         for ($i = 0; $i < count($markets); $i++) {
             $market = $markets[$i];
             $baseId = $this->safe_integer($market, 'base');
-            $base = $this->find_currency_by_id ($currencies, $baseId);
+            $base = $this->find_currency_by_id($currencies, $baseId);
             $quoteId = $this->safe_integer($market, 'counter');
-            $quote = $this->find_currency_by_id ($currencies, $quoteId);
+            $quote = $this->find_currency_by_id($currencies, $quoteId);
             $symbol = $base . '/' . $quote;
             $active = true;
             $expires = $this->safe_integer($market, 'expires');
             if ($expires !== null) {
-                if ($this->milliseconds () > $expires) {
+                if ($this->milliseconds() > $expires) {
                     $active = false;
                 }
             }
@@ -175,7 +175,7 @@ class coinflex extends Exchange {
         return $result;
     }
 
-    public function fetch_tickers ($symbols = null, $params = array ()) {
+    public function fetch_tickers($symbols = null, $params = array ()) {
         $this->load_markets();
         $response = $this->publicGetTickers ($params);
         $result = array();
@@ -187,9 +187,9 @@ class coinflex extends Exchange {
         return $result;
     }
 
-    public function fetch_ticker ($symbol = null, $params = array ()) {
+    public function fetch_ticker($symbol = null, $params = array ()) {
         $this->load_markets();
-        $market = $this->market ($symbol);
+        $market = $this->market($symbol);
         $request = array(
             'base' => $market['baseId'],
             'counter' => $market['quoteId'],
@@ -198,14 +198,14 @@ class coinflex extends Exchange {
         return $this->parse_ticker($response);
     }
 
-    public function parse_ticker ($ticker, $market = null) {
+    public function parse_ticker($ticker, $market = null) {
         if ($market === null) {
             $baseId = $this->safe_integer($ticker, 'base');
-            $base = $this->find_currency_by_id ($this->currencies, $baseId);
+            $base = $this->find_currency_by_id($this->currencies, $baseId);
             $quoteId = $this->safe_integer($ticker, 'counter');
-            $quote = $this->find_currency_by_id ($this->currencies, $quoteId);
+            $quote = $this->find_currency_by_id($this->currencies, $quoteId);
             $symbol = $base . '/' . $quote;
-            $market = $this->market ($symbol);
+            $market = $this->market($symbol);
         }
         $timestamp = $this->safe_integer($ticker, 'time'); // in microseconds
         $timestamp = intval ($timestamp / 1000000);
@@ -213,7 +213,7 @@ class coinflex extends Exchange {
         return array(
             'symbol' => $market['symbol'],
             'timestamp' => $timestamp,
-            'datetime' => $this->iso8601 ($timestamp),
+            'datetime' => $this->iso8601($timestamp),
             'high' => $this->safe_float($ticker, 'high'),
             'low' => $this->safe_float($ticker, 'low'),
             'bid' => $this->safe_float($ticker, 'bid'),
@@ -234,9 +234,9 @@ class coinflex extends Exchange {
         );
     }
 
-    public function create_order ($symbol, $type, $side, $amount, $price = null, $params = array ()) {
+    public function create_order($symbol, $type, $side, $amount, $price = null, $params = array ()) {
         $this->load_markets();
-        $market = $this->market ($symbol);
+        $market = $this->market($symbol);
         if ($side === 'sell') {
             $amount *= -1;
         }
@@ -260,9 +260,9 @@ class coinflex extends Exchange {
         }
     }
 
-    public function fetch_order_book ($symbol, $limit = null, $params = array ()) {
+    public function fetch_order_book($symbol, $limit = null, $params = array ()) {
         $this->load_markets();
-        $market = $this->market ($symbol);
+        $market = $this->market($symbol);
         $request = array(
             'base' => $market['baseId'],
             'counter' => $market['quoteId'],
@@ -271,7 +271,7 @@ class coinflex extends Exchange {
         return $this->parse_order_book($response);
     }
 
-    public function fetch_order ($id, $symbol = null, $params = array ()) {
+    public function fetch_order($id, $symbol = null, $params = array ()) {
         $this->load_markets();
         $request = array(
             'id' => intval ($id),
@@ -280,7 +280,7 @@ class coinflex extends Exchange {
         return $this->parse_order($response);
     }
 
-    public function fetch_balance ($params = array ()) {
+    public function fetch_balance($params = array ()) {
         $this->load_markets();
         $response = $this->privateGetBalances ($params);
         $result = array(
@@ -289,7 +289,7 @@ class coinflex extends Exchange {
         for ($i = 0; $i < count($response); $i++) {
             $balance = $response[$i];
             $id = $this->safe_integer($balance, 'id');
-            $currency = $this->find_currency_by_id ($this->currencies, $id);
+            $currency = $this->find_currency_by_id($this->currencies, $id);
             $available = $this->safe_float($balance, 'available');
             $reserved = $this->safe_float($balance, 'reserved');
             $asset = $this->safe_value($this->currencies, $currency);
@@ -301,13 +301,13 @@ class coinflex extends Exchange {
             $result[$currency] = array(
                 'free' => $available,
                 'used' => $reserved,
-                'total' => $this->sum ($available, $reserved),
+                'total' => $this->sum($available, $reserved),
             );
         }
         return $this->parse_balance($result);
     }
 
-    public function fetch_open_orders ($symbol = null, $since = null, $limit = null, $params = array ()) {
+    public function fetch_open_orders($symbol = null, $since = null, $limit = null, $params = array ()) {
         $this->load_markets();
         $result = $this->privateGetOrders ($params);
         $orders = $this->parse_orders($result, null, $since, $limit);
@@ -315,7 +315,7 @@ class coinflex extends Exchange {
         return $orders;
     }
 
-    public function cancel_order ($id, $symbol = null, $params = array ()) {
+    public function cancel_order($id, $symbol = null, $params = array ()) {
         $this->load_markets();
         $request = array(
             'id' => intval ($id),
@@ -323,19 +323,19 @@ class coinflex extends Exchange {
         return $this->privateDeleteOrdersId (array_merge($request, $params));
     }
 
-    public function cancel_all_orders ($symbol = null, $params = array ()) {
+    public function cancel_all_orders($symbol = null, $params = array ()) {
         return $this->privateDeleteOrders ($params);
     }
 
-    public function parse_order ($order, $market = null) {
+    public function parse_order($order, $market = null) {
         $timestamp = $this->safe_integer($order, 'time');
         $timestamp = intval ($timestamp / 1000);
         $baseId = $this->safe_integer($order, 'base');
-        $base = $this->find_currency_by_id ($this->currencies, $baseId);
+        $base = $this->find_currency_by_id($this->currencies, $baseId);
         $baseAsset = $this->currencies[$base];
         $baseScale = $this->safe_integer($baseAsset['info'], 'scale');
         $quoteId = $this->safe_integer($order, 'counter');
-        $quote = $this->find_currency_by_id ($this->currencies, $quoteId);
+        $quote = $this->find_currency_by_id($this->currencies, $quoteId);
         $quoteAsset = $this->currencies[$quote];
         $quoteScale = $this->safe_integer($quoteAsset['info'], 'scale');
         $symbol = $base . '/' . $quote;
@@ -357,7 +357,7 @@ class coinflex extends Exchange {
         return array(
             'id' => $this->safe_integer($order, 'id'),
             'timestamp' => $timestamp,
-            'datetime' => $this->iso8601 ($timestamp),
+            'datetime' => $this->iso8601($timestamp),
             'lastTradeTimestamp' => null,
             'symbol' => $symbol,
             'type' => null,
@@ -373,13 +373,13 @@ class coinflex extends Exchange {
         );
     }
 
-    public function fetch_my_trades ($symbol = null, $since = null, $limit = null, $params = array ()) {
+    public function fetch_my_trades($symbol = null, $since = null, $limit = null, $params = array ()) {
         $this->load_markets();
         $request = array();
         $response = null;
         if (is_array($params) && array_key_exists('id', $params)) {
             $request['time'] = $this->safe_integer($params, 'id');
-            $query = $this->omit ($params, 'id');
+            $query = $this->omit($params, 'id');
             $response = $this->privateGetTradesTime (array_merge($request, $query));
             $responseArray = array();
             $responseArray[] = $response;
@@ -390,19 +390,19 @@ class coinflex extends Exchange {
         return $this->parse_trades($response, null, $since, $limit);
     }
 
-    public function parse_trade ($trade, $market) {
+    public function parse_trade($trade, $market) {
         $id = $this->safe_string($trade, 'time');
         $timestamp = intval ($id / 1000);
         $baseId = $this->safe_integer($trade, 'base');
-        $base = $this->find_currency_by_id ($this->currencies, $baseId);
+        $base = $this->find_currency_by_id($this->currencies, $baseId);
         $baseAsset = $this->currencies[$base];
         $baseScale = $this->safe_integer($baseAsset['info'], 'scale');
         $quoteId = $this->safe_integer($trade, 'counter');
-        $quote = $this->find_currency_by_id ($this->currencies, $quoteId);
+        $quote = $this->find_currency_by_id($this->currencies, $quoteId);
         $quoteAsset = $this->currencies[$quote];
         $quoteScale = $this->safe_integer($quoteAsset['info'], 'scale');
         $symbol = $base . '/' . $quote;
-        $market = $this->market ($symbol);
+        $market = $this->market($symbol);
         $amount = $this->safe_integer($trade, 'quantity');
         $side = null;
         if ($amount !== null) {
@@ -442,7 +442,7 @@ class coinflex extends Exchange {
         return array(
             'id' => $id,
             'timestamp' => $timestamp,
-            'datetime' => $this->iso8601 ($timestamp),
+            'datetime' => $this->iso8601($timestamp),
             'symbol' => $market['symbol'],
             'type' => null,
             'order' => $this->safe_string($trade, 'order_id'),
@@ -456,7 +456,7 @@ class coinflex extends Exchange {
         );
     }
 
-    public function find_currency_by_id ($currencies, $id) {
+    public function find_currency_by_id($currencies, $id) {
         if ($id === null) {
             throw new ArgumentsRequired('Should specify id');
         }
@@ -472,14 +472,14 @@ class coinflex extends Exchange {
         throw new ExchangeError('Currency with $id ' . $id . ' not founded');
     }
 
-    public function sign ($path, $api = 'public', $method = 'GET', $params = array (), $headers = null, $body = null) {
+    public function sign($path, $api = 'public', $method = 'GET', $params = array (), $headers = null, $body = null) {
         $base = $this->urls['api'][$api];
         $request = '/' . $this->implode_params($path, $params);
         $url = $base . $request;
-        $query = $this->omit ($params, $this->extract_params($path));
+        $query = $this->omit($params, $this->extract_params($path));
         $suffix = '';
         if ($query) {
-            $suffix = $this->urlencode ($query);
+            $suffix = $this->urlencode($query);
         }
         if ($method === 'GET') {
             if (strlen($suffix)) {
@@ -489,10 +489,10 @@ class coinflex extends Exchange {
         if ($api === 'private') {
             $this->check_required_credentials();
             $sid = (string) $this->uid . '/' . $this->apiKey . ':' . $this->privateKey;
-            $encodedSid = $this->encode ($sid);
+            $encodedSid = $this->encode($sid);
             $base64Sid = base64_encode($encodedSid);
             $headers = array(
-                'Authorization' => 'Basic ' . $this->decode ($base64Sid),
+                'Authorization' => 'Basic ' . $this->decode($base64Sid),
             );
             if ($method === 'POST') {
                 $body = $suffix;
@@ -502,7 +502,7 @@ class coinflex extends Exchange {
         return array( 'url' => $url, 'method' => $method, 'body' => $body, 'headers' => $headers );
     }
 
-    public function handle_errors ($code, $reason, $url, $method, $headers, $body, $response, $requestHeaders, $requestBody) {
+    public function handle_errors($code, $reason, $url, $method, $headers, $body, $response, $requestHeaders, $requestBody) {
         if ($code === 400) {
             if ($method === 'POST') {
                 if (mb_strpos($url, 'orders/') > -1) {

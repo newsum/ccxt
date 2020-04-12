@@ -58,6 +58,7 @@ assert (numberToString (7.9e27) === '7900000000000000000000000000');
 assert (numberToString (-12.345) === '-12.345');
 assert (numberToString (12.345) === '12.345');
 assert (numberToString (0) === '0');
+assert (numberToString (7.35946e21) === '7359460000000000000000');
 // the following line breaks the test
 // see https://github.com/ccxt/ccxt/issues/5744
 // assert (numberToString (0.00000001) === '0.00000001');
@@ -213,6 +214,9 @@ assert (decimalToPrecision ('44', ROUND, 4.4, TICK_SIZE) === '44');
 assert (decimalToPrecision ('-44', ROUND, 4.4, TICK_SIZE) === '-44');
 assert (decimalToPrecision ('44.00000001', ROUND, 4.4, TICK_SIZE) === '44');
 assert (decimalToPrecision ('-44.00000001', ROUND, 4.4, TICK_SIZE) === '-44');
+
+// https://github.com/ccxt/ccxt/issues/6731
+assert (decimalToPrecision ('20', TRUNCATE, 0.00000001, TICK_SIZE) === '20');
 
 // ----------------------------------------------------------------------------
 // testDecimalToPrecisionNegativeNumbers

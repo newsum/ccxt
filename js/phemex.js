@@ -652,9 +652,9 @@ module.exports = class phemex extends Exchange {
         return this.parseMyTrades (trades, market);
     }
 
-    handleErrors (httpCode, reason, url, method, headers, body, response, requestHeaders, requestBody) {
-        if (httpCode === 429) {
-            throw new DDoSProtection (this.id + ' ' + httpCode.toString () + ' ' + reason + ' ' + body);
+    handleErrors (statusCode, statusText, url, method, responseHeaders, responseBody, response, requestHeaders, requestBody) {
+        if (statusCode === 429) {
+            throw new DDoSProtection (this.id + ' ' + statusCode.toString () + ' ' + statusText + ' ' + requestBody);
         }
         const code = this.safeValue (response, 'code', 0);
         if (code !== 0) {
