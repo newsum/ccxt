@@ -133,6 +133,8 @@ class bithumb(Exchange):
                         'max': None,
                     },
                 },
+                'baseId': None,
+                'quoteId': None,
             })
         return result
 
@@ -321,16 +323,18 @@ class bithumb(Exchange):
     async def cancel_order(self, id, symbol=None, params={}):
         side_in_params = ('side' in params)
         if not side_in_params:
-            raise ExchangeError(self.id + ' cancelOrder requires a `side` parameter(sell or buy) and a `currency` parameter')
-        currency = self.safe_string(params, 'currency')
-        if currency is None:
-            raise ExchangeError(self.id + ' cancelOrder requires a `currency` parameter(a currency id)')
+            raise ExchangeError(self.id + ' cancelOrder requires a `symbol` argument and a `side` parameter(sell or buy)')
+        if symbol is None:
+            raise ExchangeError(self.id + ' cancelOrder requires a `symbol` argument and a `side` parameter(sell or buy)')
+        market = self.market(symbol)
         side = 'bid' if (params['side'] == 'buy') else 'ask'
         params = self.omit(params, ['side', 'currency'])
+        # https://github.com/ccxt/ccxt/issues/6771
         request = {
             'order_id': id,
             'type': side,
-            'currency': currency,
+            'order_currency': market['base'],
+            'payment_currency': market['quote'],
         }
         return await self.privatePostTradeCancel(self.extend(request, params))
 

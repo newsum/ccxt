@@ -9,8 +9,8 @@ use Exception; // a common import
 
 class bitcoincom extends hitbtc2 {
 
-    public function describe () {
-        return array_replace_recursive(parent::describe (), array(
+    public function describe() {
+        return $this->deep_extend(parent::describe (), array(
             'id' => 'bitcoincom',
             'name' => 'Bitcoin.com Exchange',
             'countries' => array( 'KN' ), // Saint Kitts and Nevis

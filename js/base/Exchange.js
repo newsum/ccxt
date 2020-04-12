@@ -463,42 +463,50 @@ module.exports = class Exchange {
         }
     }
 
+    print (... args) {
+        console.log (... args)
+    }
+
     fetch (url, method = 'GET', headers = undefined, body = undefined) {
 
         if (isNode && this.userAgent) {
-            if (typeof this.userAgent === 'string')
+            if (typeof this.userAgent === 'string') {
                 headers = extend ({ 'User-Agent': this.userAgent }, headers)
-            else if ((typeof this.userAgent === 'object') && ('User-Agent' in this.userAgent))
+            } else if ((typeof this.userAgent === 'object') && ('User-Agent' in this.userAgent)) {
                 headers = extend (this.userAgent, headers)
+            }
         }
 
         if (typeof this.proxy === 'function') {
 
             url = this.proxy (url)
-            if (isNode)
+            if (isNode) {
                 headers = extend ({ 'Origin': this.origin }, headers)
+            }
 
         } else if (typeof this.proxy === 'string') {
 
-            if (this.proxy.length)
-                if (isNode)
-                    headers = extend ({ 'Origin': this.origin }, headers)
+            if (this.proxy.length && isNode) {
+                headers = extend ({ 'Origin': this.origin }, headers)
+            }
 
             url = this.proxy + url
         }
 
         headers = extend (this.headers, headers)
 
-        if (this.verbose)
-            console.log ("fetch:\n", this.id, method, url, "\nRequest:\n", headers, "\n", body, "\n")
+        if (this.verbose) {
+            this.print ("fetch:\n", this.id, method, url, "\nRequest:\n", headers, "\n", body, "\n")
+        }
 
         return this.executeRestRequest (url, method, headers, body)
     }
 
     async fetch2 (path, type = 'public', method = 'GET', params = {}, headers = undefined, body = undefined) {
 
-        if (this.enableRateLimit)
+        if (this.enableRateLimit) {
             await this.throttle (this.rateLimit)
+        }
 
         const request = this.sign (path, type, method, params, headers, body)
         return this.fetch (request.url, request.method, request.headers, request.body)
@@ -613,8 +621,9 @@ module.exports = class Exchange {
                 this.last_json_response = json         // FIXME: for those classes that haven't switched to handleErrors yet
             }
 
-            if (this.verbose)
-                console.log ("handleRestResponse:\n", this.id, method, url, response.status, response.statusText, "\nResponse:\n", responseHeaders, "\n", responseBody, "\n")
+            if (this.verbose) {
+                this.print ("handleRestResponse:\n", this.id, method, url, response.status, response.statusText, "\nResponse:\n", responseHeaders, "\n", responseBody, "\n")
+            }
 
             this.handleErrors (response.status, response.statusText, url, method, responseHeaders, responseBody, json, requestHeaders, requestBody)
             this.defaultErrorHandler (response.status, response.statusText, url, method, responseHeaders, responseBody, json)
@@ -636,7 +645,7 @@ module.exports = class Exchange {
         if (currencies) {
             this.currencies = deepExtend (currencies, this.currencies)
         } else {
-            const baseCurrencies =
+            let baseCurrencies =
                 values.filter (market => 'base' in market)
                     .map (market => ({
                         id: market.baseId || market.base,
@@ -644,7 +653,7 @@ module.exports = class Exchange {
                         code: market.base,
                         precision: market.precision ? (market.precision.base || market.precision.amount) : 8,
                     }))
-            const quoteCurrencies =
+            let quoteCurrencies =
                 values.filter (market => 'quote' in market)
                     .map (market => ({
                         id: market.quoteId || market.quote,
@@ -652,6 +661,10 @@ module.exports = class Exchange {
                         code: market.quote,
                         precision: market.precision ? (market.precision.quote || market.precision.price) : 8,
                     }))
+            baseCurrencies = sortBy (baseCurrencies, 'code')
+            quoteCurrencies = sortBy (quoteCurrencies, 'code')
+            this.baseCurrencies = indexBy (baseCurrencies, 'code')
+            this.quoteCurrencies = indexBy (quoteCurrencies, 'code')
             const allCurrencies = baseCurrencies.concat (quoteCurrencies)
             const groupedCurrencies = groupBy (allCurrencies, 'code')
             const currencies = Object.keys (groupedCurrencies).map (code =>
@@ -731,43 +744,42 @@ module.exports = class Exchange {
     }
 
     parseTradingViewOHLCV (ohlcvs, market = undefined, timeframe = '1m', since = undefined, limit = undefined) {
-        const result = this.convertTradingViewToOHLCV (ohlcvs);
-        return this.parseOHLCVs (result, market, timeframe, since, limit);
+        const result = this.convertTradingViewToOHLCV (ohlcvs)
+        return this.parseOHLCVs (result, market, timeframe, since, limit)
     }
 
-    convertTradingViewToOHLCV (ohlcvs) {
+    convertTradingViewToOHLCV (ohlcvs, t = 't', o = 'o', h = 'h', l = 'l', c = 'c', v = 'v', ms = false) {
         const result = [];
-        for (let i = 0; i < ohlcvs['t'].length; i++) {
+        for (let i = 0; i < ohlcvs[t].length; i++) {
             result.push ([
-                ohlcvs['t'][i] * 1000,
-                ohlcvs['o'][i],
-                ohlcvs['h'][i],
-                ohlcvs['l'][i],
-                ohlcvs['c'][i],
-                ohlcvs['v'][i],
-            ]);
+                ms ? ohlcvs[t][i] : (ohlcvs[t][i] * 1000),
+                ohlcvs[o][i],
+                ohlcvs[h][i],
+                ohlcvs[l][i],
+                ohlcvs[c][i],
+                ohlcvs[v][i],
+            ])
         }
-        return result;
+        return result
     }
 
-    convertOHLCVToTradingView (ohlcvs) {
-        const result = {
-            't': [],
-            'o': [],
-            'h': [],
-            'l': [],
-            'c': [],
-            'v': [],
-        };
+    convertOHLCVToTradingView (ohlcvs, t = 't', o = 'o', h = 'h', l = 'l', c = 'c', v = 'v', ms = false) {
+        const result = {}
+        result[t] = []
+        result[o] = []
+        result[h] = []
+        result[l] = []
+        result[c] = []
+        result[v] = []
         for (let i = 0; i < ohlcvs.length; i++) {
-            result['t'].push (parseInt (ohlcvs[i][0] / 1000));
-            result['o'].push (ohlcvs[i][1]);
-            result['h'].push (ohlcvs[i][2]);
-            result['l'].push (ohlcvs[i][3]);
-            result['c'].push (ohlcvs[i][4]);
-            result['v'].push (ohlcvs[i][5]);
+            result[t].push (ms ? ohlcvs[i][0] : parseInt (ohlcvs[i][0] / 1000))
+            result[o].push (ohlcvs[i][1])
+            result[h].push (ohlcvs[i][2])
+            result[l].push (ohlcvs[i][3])
+            result[c].push (ohlcvs[i][4])
+            result[v].push (ohlcvs[i][5])
         }
-        return result;
+        return result
     }
 
     fetchTicker (symbol, params = {}) {
@@ -1032,27 +1044,34 @@ module.exports = class Exchange {
         return this.markets;
     }
 
-    filterBySinceLimit (array, since = undefined, limit = undefined, key = 'timestamp') {
-        if (since !== undefined && since !== null)
-            array = array.filter (entry => entry[key] >= since)
-        if (limit !== undefined && limit !== null)
-            array = array.slice (0, limit)
+    filterBySinceLimit (array, since = undefined, limit = undefined, key = 'timestamp', tail = false) {
+        const sinceIsDefined = (since !== undefined && since !== null)
+        if (sinceIsDefined) {
+            array = array.filter ((entry) => entry[key] >= since)
+        }
+        if (limit !== undefined && limit !== null) {
+            array = (tail && !sinceIsDefined) ? array.slice (-limit) : array.slice (0, limit)
+        }
         return array
     }
 
-    filterByValueSinceLimit (array, field, value = undefined, since = undefined, limit = undefined) {
+    filterByValueSinceLimit (array, field, value = undefined, since = undefined, limit = undefined, key = 'timestamp', tail = false) {
 
         const valueIsDefined = value !== undefined && value !== null
         const sinceIsDefined = since !== undefined && since !== null
 
         // single-pass filter for both symbol and since
-        if (valueIsDefined || sinceIsDefined)
-            array = Object.values (array).filter (entry =>
-                ((valueIsDefined ? (entry[field] === value)   : true) &&
-                 (sinceIsDefined ? (entry.timestamp >= since) : true)))
+        if (valueIsDefined || sinceIsDefined) {
+            array = Object.values (array).filter ((entry) =>
+                ((valueIsDefined ? (entry[field] === value) : true) &&
+                 (sinceIsDefined ? (entry[key] >= since) : true)))
+        }
 
-        if (limit !== undefined && limit !== null)
-            array = Object.values (array).slice (0, limit)
+        if (limit !== undefined && limit !== null) {
+            array = ((tail && !sinceIsDefined) ?
+                Object.values (array).slice (-limit) :
+                Object.values (array).slice (0, limit))
+        }
 
         return array
     }
@@ -1070,13 +1089,15 @@ module.exports = class Exchange {
         objects = Object.values (objects)
 
         // return all of them if no values were passed
-        if (values === undefined || values === null)
+        if (values === undefined || values === null) {
             return indexed ? indexBy (objects, key) : objects
+        }
 
         const result = []
         for (let i = 0; i < objects.length; i++) {
-            if (values.includes (objects[i][key]))
+            if (values.includes (objects[i][key])) {
                 result.push (objects[i])
+            }
         }
 
         return indexed ? indexBy (result, key) : result
@@ -1087,7 +1108,7 @@ module.exports = class Exchange {
         // if (!this.isArray (trades)) {
         //     throw new ExchangeError (this.id + ' parseTrades expected an array in the trades argument, but got ' + typeof trades);
         // }
-        let result = Object.values (trades || []).map (trade => this.extend (this.parseTrade (trade, market), params))
+        let result = Object.values (trades || []).map ((trade) => this.extend (this.parseTrade (trade, market), params))
         result = sortBy (result, 'timestamp')
         const symbol = (market !== undefined) ? market['symbol'] : undefined
         return this.filterBySymbolSinceLimit (result, symbol, since, limit)
@@ -1098,7 +1119,7 @@ module.exports = class Exchange {
         // if (!this.isArray (transactions)) {
         //     throw new ExchangeError (this.id + ' parseTransactions expected an array in the transactions argument, but got ' + typeof transactions);
         // }
-        let result = Object.values (transactions || []).map (transaction => this.extend (this.parseTransaction (transaction, currency), params))
+        let result = Object.values (transactions || []).map ((transaction) => this.extend (this.parseTransaction (transaction, currency), params))
         result = this.sortBy (result, 'timestamp');
         const code = (currency !== undefined) ? currency['code'] : undefined;
         return this.filterByCurrencySinceLimit (result, code, since, limit);

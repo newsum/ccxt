@@ -4,7 +4,7 @@
 
 # -----------------------------------------------------------------------------
 
-__version__ = '1.23.85'
+__version__ = '1.26.10'
 
 # -----------------------------------------------------------------------------
 
@@ -216,6 +216,8 @@ class Exchange(object):
     transactions = None
     ohlcvs = None
     tickers = None
+    base_currencies = None
+    quote_currencies = None
     currencies = None
     options = None  # Python does not allow to define properties in run-time with setattr
     accounts = None
@@ -356,7 +358,9 @@ class Exchange(object):
         for name in dir(self):
             if name[0] != '_' and name[-1] != '_' and '_' in name:
                 parts = name.split('_')
-                camelcase = parts[0] + ''.join(self.capitalize(i) for i in parts[1:])
+                # fetch_ohlcv → fetchOHLCV (not fetchOhlcv!)
+                exceptions = {'ohlcv': 'OHLCV', 'le': 'LE', 'be': 'BE'}
+                camelcase = parts[0] + ''.join(exceptions.get(i, self.capitalize(i)) for i in parts[1:])
                 attr = getattr(self, name)
                 if isinstance(attr, types.MethodType):
                     setattr(cls, camelcase, getattr(cls, name))
@@ -508,13 +512,16 @@ class Exchange(object):
         headers.update({'Accept-Encoding': 'gzip, deflate'})
         return headers
 
+    def print(self, *args):
+        print(*args)
+
     def fetch(self, url, method='GET', headers=None, body=None):
         """Perform a HTTP request and return decoded JSON data"""
         request_headers = self.prepare_request_headers(headers)
         url = self.proxy + url
 
         if self.verbose:
-            print("\nRequest:", method, url, request_headers, body)
+            self.print("\nRequest:", method, url, request_headers, body)
         self.logger.debug("%s %s, Request: %s %s", method, url, request_headers, body)
 
         request_body = body
@@ -550,7 +557,7 @@ class Exchange(object):
             if self.enableLastResponseHeaders:
                 self.last_response_headers = headers
             if self.verbose:
-                print("\nResponse:", method, url, http_status_code, headers, http_response)
+                self.print("\nResponse:", method, url, http_status_code, headers, http_response)
             self.logger.debug("%s %s, Response: %s %s %s", method, url, http_status_code, headers, http_response)
             response.raise_for_status()
 
@@ -667,8 +674,11 @@ class Exchange(object):
         value = dictionary[key]
         if isinstance(value, Number):
             return int(value * factor)
-        elif isinstance(value, basestring) and value.isnumeric():
-            return int(float(value) * factor)
+        elif isinstance(value, basestring):
+            try:
+                return int(float(value) * factor)
+            except ValueError:
+                pass
         return default_value
 
     @staticmethod
@@ -1122,7 +1132,7 @@ class Exchange(object):
         while fixed_length and (r_int > half_order or r_int <= minimum_size or s_int <= minimum_size):
             r_binary, s_binary, v = key.sign_digest_deterministic(digest, hashfunc=hash_function,
                                                                   sigencode=ecdsa.util.sigencode_strings_canonize,
-                                                                  extra_entropy=Exchange.numberToLE(counter, 32))
+                                                                  extra_entropy=Exchange.number_to_le(counter, 32))
             r_int, s_int = ecdsa.util.sigdecode_strings((r_binary, s_binary), key.privkey.order)
             counter += 1
         r, s = Exchange.decode(base64.b16encode(r_binary)).lower(), Exchange.decode(base64.b16encode(s_binary)).lower()
@@ -1236,7 +1246,7 @@ class Exchange(object):
             self.currencies = self.deep_extend(currencies, self.currencies)
         else:
             base_currencies = [{
-                'id': market['baseId'] if 'baseId' in market else market['base'],
+                'id': market['baseId'] if (('baseId' in market) and (market['baseId'] is not None)) else market['base'],
                 'numericId': market['baseNumericId'] if 'baseNumericId' in market else None,
                 'code': market['base'],
                 'precision': (
@@ -1246,7 +1256,7 @@ class Exchange(object):
                 ) if 'precision' in market else 8,
             } for market in values if 'base' in market]
             quote_currencies = [{
-                'id': market['quoteId'] if 'quoteId' in market else market['quote'],
+                'id': market['quoteId'] if (('quoteId' in market) and (market['quoteId'] is not None)) else market['quote'],
                 'numericId': market['quoteNumericId'] if 'quoteNumericId' in market else None,
                 'code': market['quote'],
                 'precision': (
@@ -1255,6 +1265,10 @@ class Exchange(object):
                     )
                 ) if 'precision' in market else 8,
             } for market in values if 'quote' in market]
+            base_currencies = self.sort_by(base_currencies, 'code')
+            quote_currencies = self.sort_by(quote_currencies, 'code')
+            self.base_currencies = self.index_by(base_currencies, 'code')
+            self.quote_currencies = self.index_by(quote_currencies, 'code')
             currencies = self.sort_by(base_currencies + quote_currencies, 'code')
             self.currencies = self.deep_extend(self.index_by(currencies, 'code'), self.currencies)
         self.currencies_by_id = self.index_by(list(self.currencies.values()), 'id')
@@ -1499,35 +1513,34 @@ class Exchange(object):
         result = self.convert_trading_view_to_ohlcv(ohlcvs)
         return self.parse_ohlcvs(result, market, timeframe, since, limit)
 
-    def convert_trading_view_to_ohlcv(self, ohlcvs):
+    def convert_trading_view_to_ohlcv(self, ohlcvs, t='t', o='o', h='h', l='l', c='c', v='v', ms=False):  # noqa E741
         result = []
-        for i in range(0, len(ohlcvs['t'])):
+        for i in range(0, len(ohlcvs[t])):
             result.append([
-                ohlcvs['t'][i] * 1000,
-                ohlcvs['o'][i],
-                ohlcvs['h'][i],
-                ohlcvs['l'][i],
-                ohlcvs['c'][i],
-                ohlcvs['v'][i],
+                ohlcvs[t][i] if ms else (ohlcvs[t][i] * 1000),
+                ohlcvs[o][i],
+                ohlcvs[h][i],
+                ohlcvs[l][i],
+                ohlcvs[c][i],
+                ohlcvs[v][i],
             ])
         return result
 
-    def convert_ohlcv_to_trading_view(self, ohlcvs):
-        result = {
-            't': [],
-            'o': [],
-            'h': [],
-            'l': [],
-            'c': [],
-            'v': [],
-        }
+    def convert_ohlcv_to_trading_view(self, ohlcvs, t='t', o='o', h='h', l='l', c='c', v='v', ms=False):  # noqa E741
+        result = {}
+        result[t] = []
+        result[o] = []
+        result[h] = []
+        result[l] = []
+        result[c] = []
+        result[v] = []
         for i in range(0, len(ohlcvs)):
-            result['t'].append(int(ohlcvs[i][0] / 1000))
-            result['o'].append(ohlcvs[i][1])
-            result['h'].append(ohlcvs[i][2])
-            result['l'].append(ohlcvs[i][3])
-            result['c'].append(ohlcvs[i][4])
-            result['v'].append(ohlcvs[i][5])
+            result[t].append(ohlcvs[i][0] if ms else int(ohlcvs[i][0] / 1000))
+            result[o].append(ohlcvs[i][1])
+            result[h].append(ohlcvs[i][2])
+            result[l].append(ohlcvs[i][3])
+            result[c].append(ohlcvs[i][4])
+            result[v].append(ohlcvs[i][5])
         return result
 
     def build_ohlcv(self, trades, timeframe='1m', since=None, limit=None):
@@ -1635,14 +1648,14 @@ class Exchange(object):
             code = currency['code']
         return code
 
-    def filter_by_value_since_limit(self, array, field, value=None, since=None, limit=None):
+    def filter_by_value_since_limit(self, array, field, value=None, since=None, limit=None, key='timestamp', tail=False):
         array = self.to_array(array)
-        if value:
+        if value is not None:
             array = [entry for entry in array if entry[field] == value]
-        if since:
-            array = [entry for entry in array if entry['timestamp'] >= since]
-        if limit:
-            array = array[0:limit]
+        if since is not None:
+            array = [entry for entry in array if entry[key] >= since]
+        if limit is not None:
+            array = array[-limit:] if tail and (since is None) else array[:limit]
         return array
 
     def filter_by_symbol_since_limit(self, array, symbol=None, since=None, limit=None):
@@ -1651,12 +1664,12 @@ class Exchange(object):
     def filter_by_currency_since_limit(self, array, code=None, since=None, limit=None):
         return self.filter_by_value_since_limit(array, 'currency', code, since, limit)
 
-    def filter_by_since_limit(self, array, since=None, limit=None, key='timestamp'):
+    def filter_by_since_limit(self, array, since=None, limit=None, key='timestamp', tail=False):
         array = self.to_array(array)
-        if since:
+        if since is not None:
             array = [entry for entry in array if entry[key] >= since]
-        if limit:
-            array = array[0:limit]
+        if limit is not None:
+            array = array[-limit:] if tail and (since is None) else array[:limit]
         return array
 
     def filter_by_symbol(self, array, symbol=None):
@@ -1761,7 +1774,7 @@ class Exchange(object):
             raise NotSupported("Web3 functionality requires Python3 and web3 package installed: https://github.com/ethereum/web3.py")
 
     @staticmethod
-    def fromWei(amount, decimals=18):
+    def from_wei(amount, decimals=18):
         amount_float = float(amount)
         exponential = '{:e}'.format(amount_float)
         n, exponent = exponential.split('e')
@@ -1769,7 +1782,7 @@ class Exchange(object):
         return float(n + 'e' + str(new_exponent))
 
     @staticmethod
-    def toWei(amount, decimals=18):
+    def to_wei(amount, decimals=18):
         amount_float = float(amount)
         exponential = '{:e}'.format(amount_float)
         n, exponent = exponential.split('e')
@@ -1995,11 +2008,11 @@ class Exchange(object):
         return otp[-6:]
 
     @staticmethod
-    def numberToLE(n, size):
+    def number_to_le(n, size):
         return Exchange.decimal_to_bytes(int(n), 'little').ljust(size, b'\x00')
 
     @staticmethod
-    def numberToBE(n, size):
+    def number_to_be(n, size):
         return Exchange.decimal_to_bytes(int(n), 'big').rjust(size, b'\x00')
 
     @staticmethod
@@ -2018,3 +2031,6 @@ class Exchange(object):
     @staticmethod
     def integer_modulo(a, b):
         return int(a) % int(b)
+
+    def sleep(self, milliseconds):
+        return time.sleep(milliseconds / 1000)

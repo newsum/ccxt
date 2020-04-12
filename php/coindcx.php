@@ -10,8 +10,8 @@ use \ccxt\ExchangeError;
 
 class coindcx extends Exchange {
 
-    public function describe () {
-        return array_replace_recursive(parent::describe (), array(
+    public function describe() {
+        return $this->deep_extend(parent::describe (), array(
             'id' => 'coindcx',
             'name' => 'CoinDCX',
             'countries' => ['IN'], // india
@@ -101,7 +101,7 @@ class coindcx extends Exchange {
         ));
     }
 
-    public function fetch_markets ($params = array ()) {
+    public function fetch_markets($params = array ()) {
         // answer example https://coindcx-official.github.io/rest-api/?javascript#markets-$details
         $details = $this->generalGetExchangeV1MarketsDetails ($params);
         $result = array();
@@ -147,7 +147,7 @@ class coindcx extends Exchange {
         return $result;
     }
 
-    public function fetch_tickers ($symbols = null, $params = array ()) {
+    public function fetch_tickers($symbols = null, $params = array ()) {
         $this->load_markets();
         $response = $this->generalGetExchangeTicker ($params);
         $result = array();
@@ -163,10 +163,10 @@ class coindcx extends Exchange {
         return $result;
     }
 
-    public function fetch_ticker ($symbol, $params = array ()) {
+    public function fetch_ticker($symbol, $params = array ()) {
         $this->load_markets();
         $response = $this->generalGetExchangeTicker ($params);
-        $market = $this->market ($symbol);
+        $market = $this->market($symbol);
         $result = array();
         for ($i = 0; $i < count($response); $i++) {
             if ($response[$i]['market'] !== $market['id']) {
@@ -178,7 +178,7 @@ class coindcx extends Exchange {
         return $result;
     }
 
-    public function parse_ticker ($ticker) {
+    public function parse_ticker($ticker) {
         $timestamp = $this->safe_timestamp($ticker, 'timestamp');
         $tickersMarket = $this->safe_string($ticker, 'market');
         if (!(is_array($this->markets_by_id) && array_key_exists($tickersMarket, $this->markets_by_id))) {
@@ -190,7 +190,7 @@ class coindcx extends Exchange {
             'symbol' => $market['symbol'],
             'info' => $ticker,
             'timestamp' => $timestamp,
-            'datetime' => $this->iso8601 ($timestamp),
+            'datetime' => $this->iso8601($timestamp),
             'high' => $this->safe_float($ticker, 'high'),
             'low' => $this->safe_float($ticker, 'low'),
             'bid' => $this->safe_float($ticker, 'bid'),
@@ -210,11 +210,11 @@ class coindcx extends Exchange {
         );
     }
 
-    public function fetch_ohlcv ($symbol, $timeframe = '1m', $since = null, $limit = 500, $params = array ()) {
+    public function fetch_ohlcv($symbol, $timeframe = '1m', $since = null, $limit = 500, $params = array ()) {
         // https://coindcx-official.github.io/rest-api/?shell#candles
         $this->load_markets();
-        $market = $this->market ($symbol);
-        $coindcxPair = $this->get_pair_from_info ($market);
+        $market = $this->market($symbol);
+        $coindcxPair = $this->get_pair_from_info($market);
         $coindcxTimeframe = $this->timeframes[$timeframe];
         if ($coindcxTimeframe === null) {
             throw new ExchangeError($this->id . ' has no "' . $timeframe . '" timeframe');
@@ -228,7 +228,7 @@ class coindcx extends Exchange {
         return $this->parse_ohlcvs($response, $market, $timeframe, $since, $limit);
     }
 
-    public function parse_ohlcv ($ohlcv, $market = null, $timeframe = '1m', $since = null, $limit = null) {
+    public function parse_ohlcv($ohlcv, $market = null, $timeframe = '1m', $since = null, $limit = null) {
         return array(
             $this->safe_integer($ohlcv, 'time'),
             $this->safe_float($ohlcv, 'open'),
@@ -239,11 +239,11 @@ class coindcx extends Exchange {
         );
     }
 
-    public function fetch_trades ($symbol, $since = null, $limit = 30, $params = array ()) {
+    public function fetch_trades($symbol, $since = null, $limit = 30, $params = array ()) {
         // https://coindcx-official.github.io/rest-api/?shell#trades
         $this->load_markets();
-        $market = $this->market ($symbol);
-        $coindcxPair = $this->get_pair_from_info ($market);
+        $market = $this->market($symbol);
+        $coindcxPair = $this->get_pair_from_info($market);
         $request = array(
             'pair' => $coindcxPair,
             'limit' => $limit,
@@ -252,18 +252,18 @@ class coindcx extends Exchange {
         return $this->parse_trades($response, $market, $since, $limit);
     }
 
-    public function fetch_my_trades ($symbol = null, $since = null, $limit = 500, $params = array ()) {
+    public function fetch_my_trades($symbol = null, $since = null, $limit = 500, $params = array ()) {
         // https://coindcx-official.github.io/rest-api/?javascript#account-trade-history
         $this->load_markets();
         $request = array(
-            'timestamp' => $this->milliseconds (),
+            'timestamp' => $this->milliseconds(),
             'limit' => $limit,
         );
         $response = $this->privatePostExchangeV1OrdersTradeHistory (array_merge($request, $params));
         return $this->parse_trades($response, null, $since, $limit);
     }
 
-    public function parse_trade ($trade, $market = null) {
+    public function parse_trade($trade, $market = null) {
         $timestamp = $this->safe_integer_2($trade, 'T', 'timestamp');
         $symbol = null;
         if ($market === null) {
@@ -283,7 +283,7 @@ class coindcx extends Exchange {
             'id' => $this->safe_string($trade, 'id'),
             'info' => $trade,
             'timestamp' => $timestamp,
-            'datetime' => $this->iso8601 ($timestamp),
+            'datetime' => $this->iso8601($timestamp),
             'symbol' => $symbol,
             'order' => null,
             'type' => null,
@@ -296,11 +296,11 @@ class coindcx extends Exchange {
         );
     }
 
-    public function fetch_order_book ($symbol, $limit = null, $params = array ()) {
+    public function fetch_order_book($symbol, $limit = null, $params = array ()) {
         // https://coindcx-official.github.io/rest-api/?shell#order-book
         $this->load_markets();
-        $market = $this->market ($symbol);
-        $coindcxPair = $this->get_pair_from_info ($market);
+        $market = $this->market($symbol);
+        $coindcxPair = $this->get_pair_from_info($market);
         $request = array(
             'pair' => $coindcxPair,
         );
@@ -308,7 +308,7 @@ class coindcx extends Exchange {
         return $this->parse_order_book($response);
     }
 
-    public function parse_bids_asks ($bidasks, $priceKey = null, $amountKey = null) {
+    public function parse_bids_asks($bidasks, $priceKey = null, $amountKey = null) {
         $priceKeys = is_array($bidasks) ? array_keys($bidasks) : array();
         $parsedData = array();
         for ($i = 0; $i < count($priceKeys); $i++) {
@@ -320,11 +320,11 @@ class coindcx extends Exchange {
         return $parsedData;
     }
 
-    public function fetch_balance ($params = array ()) {
+    public function fetch_balance($params = array ()) {
         // https://coindcx-official.github.io/rest-api/?javascript#get-balances
         $this->load_markets();
         $request = array(
-            'timestamp' => $this->milliseconds (),
+            'timestamp' => $this->milliseconds(),
         );
         $response = $this->privatePostExchangeV1UsersBalances (array_merge($request, $params));
         $result = array( 'info' => $response );
@@ -333,17 +333,17 @@ class coindcx extends Exchange {
             $currencyId = $this->safe_string($balance, 'currency');
             $code = $this->safe_currency_code($currencyId);
             if (!(is_array($result) && array_key_exists($code, $result))) {
-                $account = $this->account ();
+                $account = $this->account();
                 $account['free'] = $this->safe_float($balance, 'balance');
                 $account['used'] = $this->safe_float($balance, 'locked_balance');
-                $account['total'] = $this->sum ($account['free'], $account['used']);
+                $account['total'] = $this->sum($account['free'], $account['used']);
                 $result[$code] = $account;
             }
         }
         return $this->parse_balance($result);
     }
 
-    public function fetch_order ($id, $symbol = null, $params = array ()) {
+    public function fetch_order($id, $symbol = null, $params = array ()) {
         // https://coindcx-official.github.io/rest-api/?javascript#account-trade-history
         $this->load_markets();
         $request = array(
@@ -353,22 +353,22 @@ class coindcx extends Exchange {
         return $this->parse_order($response);
     }
 
-    public function fetch_open_orders ($symbol = null, $since = null, $limit = null, $params = array ()) {
+    public function fetch_open_orders($symbol = null, $since = null, $limit = null, $params = array ()) {
         $this->load_markets();
-        $market = $this->market ($symbol);
+        $market = $this->market($symbol);
         $request = array(
             'market' => $this->safe_value($market, 'id'),
-            'timestamp' => $this->milliseconds (),
+            'timestamp' => $this->milliseconds(),
         );
         $response = $this->privatePostExchangeV1OrdersActiveOrders (array_merge($request, $params));
         $orders = $this->safe_value($response, 'orders', array());
         return $this->parse_orders($orders, $market, $since, $limit);
     }
 
-    public function create_order ($symbol, $type, $side, $amount, $price = null, $params = array ()) {
+    public function create_order($symbol, $type, $side, $amount, $price = null, $params = array ()) {
         // https://coindcx-official.github.io/rest-api/?javascript#new-order
         $this->load_markets();
-        $market = $this->market ($symbol);
+        $market = $this->market($symbol);
         $marketInfo = $this->safe_value($market, 'info');
         $orderType = 'limit_order';
         if ($type === 'market') {
@@ -379,7 +379,7 @@ class coindcx extends Exchange {
             'total_quantity' => $amount,
             'side' => $side,
             'order_type' => $orderType,
-            'timestamp' => $this->milliseconds (),
+            'timestamp' => $this->milliseconds(),
         );
         if ($orderType === 'limit_order') {
             $request['price_per_unit'] = $price;
@@ -389,26 +389,26 @@ class coindcx extends Exchange {
         return $this->parse_order($orders[0], $market);
     }
 
-    public function cancel_order ($id, $symbol = null, $params = array ()) {
+    public function cancel_order($id, $symbol = null, $params = array ()) {
         $this->load_markets();
         $request = array(
             'id' => $id,
-            'timestamp' => $this->milliseconds (),
+            'timestamp' => $this->milliseconds(),
         );
         return $this->privatePostExchangeV1OrdersCancel (array_merge($request, $params));
     }
 
-    public function cancel_all_orders ($symbol = null, $params = array ()) {
+    public function cancel_all_orders($symbol = null, $params = array ()) {
         $this->load_markets();
-        $market = $this->market ($symbol);
+        $market = $this->market($symbol);
         $request = array(
             'market' => $this->safe_value($market, 'id'),
-            'timestamp' => $this->milliseconds (),
+            'timestamp' => $this->milliseconds(),
         );
         return $this->privatePostExchangeV1OrdersCancelAll (array_merge($request, $params));
     }
 
-    public function parse_order_status ($status) {
+    public function parse_order_status($status) {
         $statuses = array(
             'init' => 'open',
             'open' => 'open',
@@ -421,7 +421,7 @@ class coindcx extends Exchange {
         return $this->safe_string($statuses, $status, $status);
     }
 
-    public function parse_order ($order, $market = null) {
+    public function parse_order($order, $market = null) {
         $id = $this->safe_string($order, 'id');
         $timestamp = $this->parse_date($this->safe_string($order, 'created_at'));
         if ($timestamp === null) {
@@ -459,7 +459,7 @@ class coindcx extends Exchange {
         }
         return array(
             'id' => $id,
-            'datetime' => $this->iso8601 ($timestamp),
+            'datetime' => $this->iso8601($timestamp),
             'timestamp' => $timestamp,
             'lastTradeTimestamp' => $lastTradeTimestamp,
             'status' => $status,
@@ -477,7 +477,7 @@ class coindcx extends Exchange {
         );
     }
 
-    public function get_pair_from_info ($market) {
+    public function get_pair_from_info($market) {
         $marketInfo = $this->safe_value($market, 'info');
         $coindcxPair = $this->safe_string($marketInfo, 'pair');
         if ($coindcxPair === null) {
@@ -486,21 +486,21 @@ class coindcx extends Exchange {
         return $coindcxPair;
     }
 
-    public function sign ($path, $api = 'public', $method = 'GET', $params = array (), $headers = null, $body = null) {
+    public function sign($path, $api = 'public', $method = 'GET', $params = array (), $headers = null, $body = null) {
         $base = $this->urls['api'][$api];
         $request = '/' . $this->implode_params($path, $params);
         $url = $base . $request;
-        $query = $this->omit ($params, $this->extract_params($path));
+        $query = $this->omit($params, $this->extract_params($path));
         if ($method === 'GET') {
             if ($query) {
-                $suffix = '?' . $this->urlencode ($query);
+                $suffix = '?' . $this->urlencode($query);
                 $url .= $suffix;
             }
         }
         if ($api === 'private') {
             $this->check_required_credentials();
-            $body = $this->json ($query);
-            $signature = $this->hmac ($this->encode ($body), $this->encode ($this->secret));
+            $body = $this->json($query);
+            $signature = $this->hmac($this->encode($body), $this->encode($this->secret));
             $headers = array(
                 'X-AUTH-APIKEY' => $this->apiKey,
                 'X-AUTH-SIGNATURE' => $signature,
@@ -509,7 +509,7 @@ class coindcx extends Exchange {
         return array( 'url' => $url, 'method' => $method, 'body' => $body, 'headers' => $headers );
     }
 
-    public function handle_errors ($code, $reason, $url, $method, $headers, $body, $response, $requestHeaders, $requestBody) {
+    public function handle_errors($code, $reason, $url, $method, $headers, $body, $response, $requestHeaders, $requestBody) {
         if (!$response) {
             return;
         }

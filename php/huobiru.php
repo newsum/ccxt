@@ -9,8 +9,8 @@ use Exception; // a common import
 
 class huobiru extends huobipro {
 
-    public function describe () {
-        return array_replace_recursive(parent::describe (), array(
+    public function describe() {
+        return $this->deep_extend(parent::describe (), array(
             'id' => 'huobiru',
             'name' => 'Huobi Russia',
             'countries' => array( 'RU' ),

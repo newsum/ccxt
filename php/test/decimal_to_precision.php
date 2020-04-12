@@ -26,10 +26,10 @@ function number_to_string ($x) {
     return Exchange::number_to_string ($x);
 }
 function toWei ($amount, $decimals) {
-    return Exchange::toWei ($amount, $decimals);
+    return Exchange::to_wei ($amount, $decimals);
 }
 function fromWei ($amount, $decimals) {
-    return Exchange::fromWei ($amount, $decimals);
+    return Exchange::from_wei ($amount, $decimals);
 }
 
 // ----------------------------------------------------------------------------
@@ -87,6 +87,7 @@ assert (number_to_string (7.9e27) === '7900000000000000000000000000');
 assert (number_to_string (-12.345) === '-12.345');
 assert (number_to_string (12.345) === '12.345');
 assert (number_to_string (0) === '0');
+assert (number_to_string (7.35946e21) === '7359460000000000000000');
 // the following line breaks the test
 // see https://github.com/ccxt/ccxt/issues/5744
 // assert (number_to_string (0.00000001) === '0.00000001');
@@ -242,6 +243,9 @@ assert (decimal_to_precision ('44', ROUND, 4.4, TICK_SIZE) === '44');
 assert (decimal_to_precision ('-44', ROUND, 4.4, TICK_SIZE) === '-44');
 assert (decimal_to_precision ('44.00000001', ROUND, 4.4, TICK_SIZE) === '44');
 assert (decimal_to_precision ('-44.00000001', ROUND, 4.4, TICK_SIZE) === '-44');
+
+// https://github.com/ccxt/ccxt/issues/6731
+assert (decimal_to_precision ('20', TRUNCATE, 0.00000001, TICK_SIZE) === '20');
 
 // ----------------------------------------------------------------------------
 // testDecimalToPrecisionNegativeNumbers

@@ -42,6 +42,7 @@ module.exports = class bitmart extends Exchange {
                 'www': 'https://www.bitmart.com/',
                 'doc': 'https://github.com/bitmartexchange/bitmart-official-api-docs',
                 'referral': 'http://www.bitmart.com/?r=rQCFLh',
+                'fees': 'https://www.bitmart.com/fee/en',
             },
             'requiredCredentials': {
                 'apiKey': true,
@@ -249,6 +250,7 @@ module.exports = class bitmart extends Exchange {
                 'precision': precision,
                 'limits': limits,
                 'info': market,
+                'active': undefined,
             });
         }
         return result;
@@ -682,6 +684,7 @@ module.exports = class bitmart extends Exchange {
         const type = undefined;
         return {
             'id': id,
+            'clientOrderId': undefined,
             'info': order,
             'timestamp': timestamp,
             'datetime': this.iso8601 (timestamp),

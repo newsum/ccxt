@@ -12,34 +12,34 @@ use \ccxt\DDoSProtection;
 
 class phemex extends Exchange {
 
-    public function convert_time_ns ($ns) {
+    public function convert_time_ns($ns) {
         return (int) floor($ns * pow(10, -6));
     }
 
-    public function convert_e_number ($eNum, $scale, $precision, $roundType) {
+    public function convert_e_number($eNum, $scale, $precision, $roundType) {
         return $this->decimal_to_precision($eNum * pow(10, -$scale), $roundType, $precision, DECIMAL_PLACES, PAD_WITH_ZERO);
     }
 
-    public function convert_ev ($ev, $scale, $precision) {
-        return $this->convert_e_number ($ev, $scale, $precision, ROUND);
+    public function convert_ev($ev, $scale, $precision) {
+        return $this->convert_e_number($ev, $scale, $precision, ROUND);
     }
 
-    public function convert_er ($er, $scale, $precision) {
-        return $this->convert_e_number ($er, $scale, $precision, ROUND);
+    public function convert_er($er, $scale, $precision) {
+        return $this->convert_e_number($er, $scale, $precision, ROUND);
     }
 
-    public function convert_ep ($ep, $scale, $precision) {
+    public function convert_ep($ep, $scale, $precision) {
         if ($ep === null) {
             return null;
         }
-        return $this->convert_e_number ($ep, $scale, $precision, ROUND);
+        return $this->convert_e_number($ep, $scale, $precision, ROUND);
     }
 
-    public function convert_to_ep ($price) {
+    public function convert_to_ep($price) {
         return $price * pow(10, 4);
     }
 
-    public function calc_average_ep ($filledEv, $valueScale, $priceScale, $filled, $contractSide) {
+    public function calc_average_ep($filledEv, $valueScale, $priceScale, $filled, $contractSide) {
         if ($filled === 0) {
             return null;
         }
@@ -51,7 +51,7 @@ class phemex extends Exchange {
         return pow($filledEv / ($valueFactor * $filled), $contractSide) * $priceFactor;
     }
 
-    public function calc_cost_ev ($filled, $averageEp, $priceEp, $priceScale, $valueScale, $contractSide) {
+    public function calc_cost_ev($filled, $averageEp, $priceEp, $priceScale, $valueScale, $contractSide) {
         if ($filled === 0) {
             return 0;
         }
@@ -69,15 +69,15 @@ class phemex extends Exchange {
         return $filled * pow($ep / $priceFactor, $contractSide) * $valueFactor;
     }
 
-    public function parse_response ($response) {
+    public function parse_response($response) {
         return $this->safe_value($response, 'data', null);
     }
 
-    public function parse_md_response ($response) {
+    public function parse_md_response($response) {
         return $this->safe_value($response, 'result', null);
     }
 
-    public function parse_market ($product, $precisions) {
+    public function parse_market($product, $precisions) {
         $id = $this->safe_string($product, 'symbol');
         $quoteCurrency = $this->safe_string($product, 'quoteCurrency');
         $settlementCurrency = $this->safe_string($product, 'settlementCurrency');
@@ -120,14 +120,14 @@ class phemex extends Exchange {
         );
     }
 
-    public function parse_bid_ask ($bidask, $priceKey = 0, $amountKey = 1, $priceScale = 4, $pricePrecision = 1) {
+    public function parse_bid_ask($bidask, $priceKey = 0, $amountKey = 1, $priceScale = 4, $pricePrecision = 1) {
         $priceEp = $bidask[$priceKey];
-        $price = floatval ($this->convert_ep ($priceEp, $priceScale, $pricePrecision));
+        $price = floatval ($this->convert_ep($priceEp, $priceScale, $pricePrecision));
         $amount = floatval ($bidask[$amountKey]);
         return [$price, $amount];
     }
 
-    public function parse_bids_asks ($bidasks, $priceKey = 0, $amountKey = 1, $priceScale = 4, $pricePrecision = 1) {
+    public function parse_bids_asks($bidasks, $priceKey = 0, $amountKey = 1, $priceScale = 4, $pricePrecision = 1) {
         $result = array();
         for ($i = 0; $i < count($bidasks); $i++) {
             $bidask = $this->parse_bid_ask($bidasks[$i], $priceKey, $amountKey, $priceScale, $pricePrecision);
@@ -136,7 +136,7 @@ class phemex extends Exchange {
         return $result;
     }
 
-    public function parse_order_book ($orderbook, $timestamp = null, $bidsKey = 'bids', $asksKey = 'asks', $priceKey = 0, $amountKey = 1, $market = null) {
+    public function parse_order_book($orderbook, $timestamp = null, $bidsKey = 'bids', $asksKey = 'asks', $priceKey = 0, $amountKey = 1, $market = null) {
         // $market data
         $precisions = $this->safe_value($market, 'precision');
         $priceScale = $this->safe_integer($market, 'priceScale');
@@ -147,12 +147,12 @@ class phemex extends Exchange {
             'bids' => $this->sort_by($this->parse_bids_asks($rawBids, $priceKey, $amountKey, $priceScale, $pricePrecision), 0, true),
             'asks' => $this->sort_by($this->parse_bids_asks($rawAsks, $priceKey, $amountKey, $priceScale, $pricePrecision), 0),
             'timestamp' => $timestamp,
-            'datetime' => $this->iso8601 ($timestamp),
+            'datetime' => $this->iso8601($timestamp),
             'nonce' => null,
         );
     }
 
-    public function parse_order_status ($status) {
+    public function parse_order_status($status) {
         $statuses = array(
             'Untriggered' => 'open',
             'Deactivated' => 'closed',
@@ -166,7 +166,7 @@ class phemex extends Exchange {
         return $this->safe_string($statuses, $status, $status);
     }
 
-    public function parse_order ($order, $market = null) {
+    public function parse_order($order, $market = null) {
         $marketID = $market['id'];
         // $market data
         $contractSide = $this->safe_integer($market, $marketID, 1);
@@ -187,28 +187,28 @@ class phemex extends Exchange {
         $filled = $this->safe_integer($order, 'cumQty', 0);
         $filledEv = $this->safe_integer($order, 'cumValueEv', 0);
         // derived data
-        $timestamp = $this->convert_time_ns ($actionTimeNs);
+        $timestamp = $this->convert_time_ns($actionTimeNs);
         $remaining = 0;
         if ($amount !== 0) {
             if ($filled !== 0) {
                 $remaining = max ($amount - $filled, 0);
             }
         }
-        $averageEp = $this->calc_average_ep ($filledEv, $valueScale, $priceScale, $filled, $contractSide);
-        $average = $this->convert_ep ($averageEp, $priceScale, $pricePrecision);
-        $costEv = $this->calc_cost_ev ($filled, $averageEp, $priceEp, $priceScale, $valueScale, $contractSide);
+        $averageEp = $this->calc_average_ep($filledEv, $valueScale, $priceScale, $filled, $contractSide);
+        $average = $this->convert_ep($averageEp, $priceScale, $pricePrecision);
+        $costEv = $this->calc_cost_ev($filled, $averageEp, $priceEp, $priceScale, $valueScale, $contractSide);
         return array(
             'info' => $order,
             'id' => $id,
-            'datetime' => $this->iso8601 ($timestamp),
+            'datetime' => $this->iso8601($timestamp),
             'timestamp' => $timestamp,
-            'lastTradeTimestamp' => $this->convert_time_ns ($transactTimeNs),
+            'lastTradeTimestamp' => $this->convert_time_ns($transactTimeNs),
             'symbol' => $market['symbol'],
             'type' => $type,
             'side' => $side,
-            'price' => $this->convert_ep ($priceEp, $priceScale, $pricePrecision),
+            'price' => $this->convert_ep($priceEp, $priceScale, $pricePrecision),
             'amount' => $amount,
-            'cost' => $this->convert_ev ($costEv, $valueScale, $valuePrecision),
+            'cost' => $this->convert_ev($costEv, $valueScale, $valuePrecision),
             'average' => $average,
             'filled' => $filled,
             'remaining' => $remaining,
@@ -217,7 +217,7 @@ class phemex extends Exchange {
         );
     }
 
-    public function parse_orders ($orders, $market = null, $since = null, $limit = null, $params = array ()) {
+    public function parse_orders($orders, $market = null, $since = null, $limit = null, $params = array ()) {
         $result = array();
         $ordersCount = is_array($orders) ? count($orders) : 0;
         for ($i = 0; $i < $ordersCount; $i++) {
@@ -226,7 +226,7 @@ class phemex extends Exchange {
         return $result;
     }
 
-    public function parse_my_trade ($trade, $market = null) {
+    public function parse_my_trade($trade, $market = null) {
         $marketID = $market['id'];
         // $market data
         $contractSide = $this->safe_integer($market, $marketID, 1);
@@ -237,14 +237,14 @@ class phemex extends Exchange {
         $valuePrecision = $this->safe_integer($precisions, 'value');
         // $trade data
         $transactTimeNs = $this->safe_integer($trade, 'transactTimeNs', 0);
-        $timestamp = $this->convert_time_ns ($transactTimeNs);
+        $timestamp = $this->convert_time_ns($transactTimeNs);
         $type = $this->safe_string_lower($trade, 'ordType');
         $side = $this->safe_string_lower($trade, 'side');
         $execStatus = $this->safe_string($trade, 'execStatus');
         $execPriceEp = $this->safe_integer($trade, 'execPriceEp', 0);
         $priceEp = $this->safe_integer($trade, 'priceEp', 0);
         $amount = $this->safe_integer($trade, 'execQty', 0);
-        $costEv = $this->calc_cost_ev ($amount, $execPriceEp, $priceEp, $priceScale, $valueScale, $contractSide);
+        $costEv = $this->calc_cost_ev($amount, $execPriceEp, $priceEp, $priceScale, $valueScale, $contractSide);
         $execFeeEv = $this->safe_integer($trade, 'execFeeEv', 0);
         $feeRateEr = $this->safe_integer($trade, 'feeRateEr', 0);
         $takerOrMaker = null;
@@ -257,39 +257,39 @@ class phemex extends Exchange {
             'info' => $trade,
             'id' => $this->safe_string($trade, 'execID'),
             'timestamp' => $timestamp,
-            'datetime' => $this->iso8601 ($timestamp),
+            'datetime' => $this->iso8601($timestamp),
             'symbol' => $market['symbol'],
             'order' => $this->safe_string($trade, 'orderID'),
             'type' => $type,
             'side' => $side,
             'takerOrMaker' => $takerOrMaker,
-            'price' => $this->convert_ep ($execPriceEp, $priceScale, $pricePrecision),
+            'price' => $this->convert_ep($execPriceEp, $priceScale, $pricePrecision),
             'amount' => $amount,
-            'cost' => $this->convert_ev ($costEv . $execFeeEv, $valueScale, $valuePrecision),
+            'cost' => $this->convert_ev($costEv . $execFeeEv, $valueScale, $valuePrecision),
             'fee' => array(
-                'cost' => $this->convert_ev ($execFeeEv, $valueScale, $valuePrecision),
+                'cost' => $this->convert_ev($execFeeEv, $valueScale, $valuePrecision),
                 'currency' => $this->safe_string($trade, 'currency'),
-                'rate' => $this->convert_er ($feeRateEr, 8, 8),
+                'rate' => $this->convert_er($feeRateEr, 8, 8),
             ),
         );
     }
 
-    public function parse_my_trades ($trades, $market = null) {
+    public function parse_my_trades($trades, $market = null) {
         $result = array();
         $tradesCount = is_array($trades) ? count($trades) : 0;
         for ($i = 0; $i < $tradesCount; $i++) {
-            $result[] = $this->parse_my_trade ($trades[$i], $market);
+            $result[] = $this->parse_my_trade($trades[$i], $market);
         }
         return $result;
     }
 
-    public function parse_md_trade ($trade, $market = null) {
+    public function parse_md_trade($trade, $market = null) {
         // $market data
         $precisions = $this->safe_value($market, 'precision');
         $priceScale = $this->safe_integer($market, 'priceScale');
         $pricePrecision = $this->safe_integer($precisions, 'price');
         $timestampNs = $trade[0];
-        $timestamp = $this->convert_time_ns ($timestampNs);
+        $timestamp = $this->convert_time_ns($timestampNs);
         $side = strtolower($trade[1]);
         $priceEp = $trade[2];
         $amount = $trade[3];
@@ -297,13 +297,13 @@ class phemex extends Exchange {
             'info' => $trade,
             'id' => null,
             'timestamp' => $timestamp,
-            'datetime' => $this->iso8601 ($timestamp),
+            'datetime' => $this->iso8601($timestamp),
             'symbol' => $market['symbol'],
             'order' => null,
             'type' => null,
             'side' => $side,
             'takerOrMaker' => null,
-            'price' => floatval ($this->convert_ep ($priceEp, $priceScale, $pricePrecision)),
+            'price' => floatval ($this->convert_ep($priceEp, $priceScale, $pricePrecision)),
             'amount' => $amount,
             'cost' => null,
             'fee' => array(
@@ -314,17 +314,17 @@ class phemex extends Exchange {
         );
     }
 
-    public function parse_md_trades ($trades, $market = null) {
+    public function parse_md_trades($trades, $market = null) {
         $result = array();
         $tradesCount = is_array($trades) ? count($trades) : 0;
         for ($i = 0; $i < $tradesCount; $i++) {
-            $result[] = $this->parse_md_trade ($trades[$i], $market);
+            $result[] = $this->parse_md_trade($trades[$i], $market);
         }
         return $result;
     }
 
-    public function describe () {
-        return array_replace_recursive(parent::describe (), array(
+    public function describe() {
+        return $this->deep_extend(parent::describe (), array(
             'id' => 'phemex',
             'name' => 'Phemex',
             'countries' => ['SC'],
@@ -452,7 +452,7 @@ class phemex extends Exchange {
         ));
     }
 
-    public function fetch_markets ($params = array ()) {
+    public function fetch_markets($params = array ()) {
         $precisions = array(
             'BTCUSD' => array(
                 'amount' => 0,
@@ -476,54 +476,54 @@ class phemex extends Exchange {
         $productsCount = is_array($products) ? count($products) : 0;
         $result = array();
         for ($i = 0; $i < $productsCount; $i++) {
-            $market = $this->parse_market ($products[$i], $precisions);
+            $market = $this->parse_market($products[$i], $precisions);
             $result[] = $market;
         }
         return $result;
     }
 
-    public function fetch_order_book ($symbol, $limit = null, $params = array ()) {
+    public function fetch_order_book($symbol, $limit = null, $params = array ()) {
         $this->load_markets();
-        $market = $this->market ($symbol);
+        $market = $this->market($symbol);
         $marketID = $market['id'];
         $method = 'public2GetMdOrderbook';
         $response = $this->$method (array( 'symbol' => $marketID ));
-        $data = $this->parse_md_response ($response);
+        $data = $this->parse_md_response($response);
         $book = $this->safe_value($data, 'book');
         return $this->parse_order_book($book, null, 'bids', 'asks', 0, 1, $market);
     }
 
-    public function fetch_trades ($symbol, $since = null, $limit = null, $params = array ()) {
+    public function fetch_trades($symbol, $since = null, $limit = null, $params = array ()) {
         $this->load_markets();
-        $market = $this->market ($symbol);
+        $market = $this->market($symbol);
         $marketID = $market['id'];
         $method = 'public2GetMdTrade';
         $response = $this->$method (array( 'symbol' => $marketID ));
-        $data = $this->parse_md_response ($response);
+        $data = $this->parse_md_response($response);
         $trades = $this->safe_value($data, 'trades');
-        return $this->parse_md_trades ($this->sort_by($trades, 0), $market);
+        return $this->parse_md_trades($this->sort_by($trades, 0), $market);
     }
 
-    public function fetch_balance ($params = array ()) {
+    public function fetch_balance($params = array ()) {
         $this->load_markets();
         $method = 'privateGetAccountsAccountPositions';
         $btcResponse = $this->$method (array( 'currency' => 'BTC' ));
         $usdResponse = $this->$method (array( 'currency' => 'USD' ));
-        $btcAccount = $this->safe_value($this->parse_response ($btcResponse), 'account');
+        $btcAccount = $this->safe_value($this->parse_response($btcResponse), 'account');
         $btcBalanceEv = $this->safe_value($btcAccount, 'accountBalanceEv');
         $btcTotalUsedBalanceEv = $this->safe_value($btcAccount, 'totalUsedBalanceEv');
-        $usdAccount = $this->safe_value($this->parse_response ($usdResponse), 'account');
+        $usdAccount = $this->safe_value($this->parse_response($usdResponse), 'account');
         $usdBalanceEv = $this->safe_value($usdAccount, 'accountBalanceEv');
         $usdTotalUsedBalanceEv = $this->safe_value($usdAccount, 'totalUsedBalanceEv');
         $BTC = array(
-            'free' => $this->convert_ev ($btcBalanceEv - $btcTotalUsedBalanceEv, 8, 8),
-            'used' => $this->convert_ev ($btcTotalUsedBalanceEv, 8, 8),
-            'total' => $this->convert_ev ($btcBalanceEv, 8, 8),
+            'free' => $this->convert_ev($btcBalanceEv - $btcTotalUsedBalanceEv, 8, 8),
+            'used' => $this->convert_ev($btcTotalUsedBalanceEv, 8, 8),
+            'total' => $this->convert_ev($btcBalanceEv, 8, 8),
         );
         $USD = array(
-            'free' => $this->convert_ev ($usdBalanceEv - $usdTotalUsedBalanceEv, 4, 2),
-            'used' => $this->convert_ev ($usdTotalUsedBalanceEv, 4, 2),
-            'total' => $this->convert_ev ($usdBalanceEv, 4, 2),
+            'free' => $this->convert_ev($usdBalanceEv - $usdTotalUsedBalanceEv, 4, 2),
+            'used' => $this->convert_ev($usdTotalUsedBalanceEv, 4, 2),
+            'total' => $this->convert_ev($usdBalanceEv, 4, 2),
         );
         return array(
             'free' => array(
@@ -544,13 +544,13 @@ class phemex extends Exchange {
         );
     }
 
-    public function fetch_order ($id, $symbol = null, $params = array ()) {
+    public function fetch_order($id, $symbol = null, $params = array ()) {
         $this->load_markets();
-        $market = $this->market ($symbol);
+        $market = $this->market($symbol);
         $marketID = $market['id'];
         $method = 'privateGetPhemexUserOrder';
         $response = $this->$method (array( 'orderID' => $id, 'symbol' => $marketID ));
-        $orders = $this->parse_response ($response);
+        $orders = $this->parse_response($response);
         $orderCount = is_array($orders) ? count($orders) : 0;
         if ($orderCount > 0) {
             return $this->parse_order($orders[0], $market);
@@ -558,25 +558,25 @@ class phemex extends Exchange {
         throw new OrderNotFound($this->id . ' => The order ' . $id . ' not found.');
     }
 
-    public function fetch_orders ($symbol = null, $since = null, $limit = null, $params = array ()) {
+    public function fetch_orders($symbol = null, $since = null, $limit = null, $params = array ()) {
         $this->load_markets();
-        $market = $this->market ($symbol);
+        $market = $this->market($symbol);
         $marketID = $market['id'];
         $method = 'privateGetPhemexUserOrderList';
         $response = $this->$method (array( 'symbol' => $marketID, 'start' => $since, 'limit' => $limit ));
-        $data = $this->parse_response ($response);
+        $data = $this->parse_response($response);
         $orders = $this->safe_value($data, 'rows', array());
         return $this->parse_orders($orders, $market);
     }
 
-    public function fetch_open_orders ($symbol = null, $since = null, $limit = null, $params = array ()) {
+    public function fetch_open_orders($symbol = null, $since = null, $limit = null, $params = array ()) {
         $this->load_markets();
-        $market = $this->market ($symbol);
+        $market = $this->market($symbol);
         $marketID = $market['id'];
         $method = 'privateGetOrdersActiveList';
         try {
             $response = $this->$method (array( 'symbol' => $marketID ));
-            $data = $this->parse_response ($response);
+            $data = $this->parse_response($response);
             $orders = $this->safe_value($data, 'rows');
             return $this->parse_orders($orders, $market);
         } catch (Exception $e) {
@@ -584,13 +584,13 @@ class phemex extends Exchange {
         }
     }
 
-    public function fetch_closed_orders ($symbol = null, $since = null, $limit = null, $params = array ()) {
+    public function fetch_closed_orders($symbol = null, $since = null, $limit = null, $params = array ()) {
         $this->load_markets();
-        $market = $this->market ($symbol);
+        $market = $this->market($symbol);
         $marketID = $market['id'];
         $method = 'privateGetPhemexUserOrderList';
         $response = $this->$method (array( 'symbol' => $marketID, 'start' => $since, 'limit' => $limit ));
-        $data = $this->parse_response ($response);
+        $data = $this->parse_response($response);
         $rawOrders = $this->safe_value($data, 'rows');
         $orders = $this->parse_orders($rawOrders, $market);
         $orderCount = is_array($orders) ? count($orders) : 0;
@@ -605,22 +605,22 @@ class phemex extends Exchange {
         return $result;
     }
 
-    public function create_order ($symbol, $type, $side, $amount, $price = null, $params = array ()) {
+    public function create_order($symbol, $type, $side, $amount, $price = null, $params = array ()) {
         $this->load_markets();
-        $market = $this->market ($symbol);
+        $market = $this->market($symbol);
         $marketID = $market['id'];
         $request = array(
-            'clOrdID' => $this->uuid (),
+            'clOrdID' => $this->uuid(),
             'symbol' => $marketID,
-            'side' => $this->capitalize ($side),
+            'side' => $this->capitalize($side),
             'orderQty' => $amount,
-            'ordType' => $this->capitalize ($type),
+            'ordType' => $this->capitalize($type),
             'postOnly' => false,
             'reduceOnly' => false,
             'timeInForce' => $this->safe_string($params, 'timeInForce', 'GoodTillCancel'),
         );
         if ($price !== null) {
-            $request['priceEp'] = $this->convert_to_ep ($price);
+            $request['priceEp'] = $this->convert_to_ep($price);
         }
         $method = 'privatePostOrders';
         $response = $this->$method (array_merge($request, $params));
@@ -630,34 +630,34 @@ class phemex extends Exchange {
         return array_merge(array( 'info' => $response ), $order);
     }
 
-    public function cancel_order ($id, $symbol = null, $params = array ()) {
+    public function cancel_order($id, $symbol = null, $params = array ()) {
         $this->load_markets();
-        $market = $this->market ($symbol);
+        $market = $this->market($symbol);
         $marketID = $market['id'];
         $method = 'privateDeleteOrdersCancel';
         try {
             $response = $this->$method (array( 'orderID' => $id, 'symbol' => $marketID ));
-            $order = $this->parse_response ($response);
+            $order = $this->parse_response($response);
             return $this->parse_order($order, $market);
         } catch (Exception $e) {
             throw new OrderNotFound($this->id . ' => The $order ' . $id . ' not found.');
         }
     }
 
-    public function fetch_my_trades ($symbol = null, $since = null, $limit = null, $params = array ()) {
+    public function fetch_my_trades($symbol = null, $since = null, $limit = null, $params = array ()) {
         $this->load_markets();
-        $market = $this->market ($symbol);
+        $market = $this->market($symbol);
         $marketID = $market['id'];
         $method = 'privateGetPhemexUserOrderTrade';
         $response = $this->$method (array( 'symbol' => $marketID, 'start' => $since, 'limit' => $limit ));
-        $data = $this->parse_response ($response);
+        $data = $this->parse_response($response);
         $trades = $this->safe_value($data, 'rows', array());
-        return $this->parse_my_trades ($trades, $market);
+        return $this->parse_my_trades($trades, $market);
     }
 
-    public function handle_errors ($httpCode, $reason, $url, $method, $headers, $body, $response, $requestHeaders, $requestBody) {
-        if ($httpCode === 429) {
-            throw new DDoSProtection($this->id . ' ' . (string) $httpCode . ' ' . $reason . ' ' . $body);
+    public function handle_errors($statusCode, $statusText, $url, $method, $responseHeaders, $responseBody, $response, $requestHeaders, $requestBody) {
+        if ($statusCode === 429) {
+            throw new DDoSProtection($this->id . ' ' . (string) $statusCode . ' ' . $statusText . ' ' . $requestBody);
         }
         $code = $this->safe_value($response, 'code', 0);
         if ($code !== 0) {
@@ -666,11 +666,11 @@ class phemex extends Exchange {
         }
     }
 
-    public function nonce () {
-        return $this->milliseconds ();
+    public function nonce() {
+        return $this->milliseconds();
     }
 
-    public function sign ($path, $api = 'public', $method = 'GET', $params = array (), $headers = null, $body = null) {
+    public function sign($path, $api = 'public', $method = 'GET', $params = array (), $headers = null, $body = null) {
         $urlPath = '/' . $path;
         $querystring = '';
         if ($method === 'GET' || $method === 'DELETE') {
@@ -691,19 +691,19 @@ class phemex extends Exchange {
                 }
             }
         } else {
-            $body = $this->json ($params);
+            $body = $this->json($params);
         }
         $url = $this->urls['api'][$api] . $urlPath . '';
         if ($querystring !== '') {
             $url .= '?' . $querystring;
         }
         if ($this->apiKey && $this->secret) {
-            $expiry = $this->number_to_string($this->seconds () . 2 * 60);
+            $expiry = $this->number_to_string($this->seconds() . 2 * 60);
             $content = $urlPath . $querystring . $expiry;
             if ($body) {
                 $content .= $body;
             }
-            $signature = $this->hmac ($content, $this->secret);
+            $signature = $this->hmac($content, $this->secret);
             $headers = array(
                 'Content-Type' => 'application/json',
                 'x-phemex-access-token' => $this->apiKey,
