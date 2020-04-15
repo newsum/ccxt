@@ -610,7 +610,7 @@ class phemex(Exchange):
         trades = self.safe_value(data, 'rows', [])
         return self.parse_my_trades(trades, market)
 
-    def handle_errors(self, code, reason, url, method, headers, body, response, requestHeaders, requestBody):
+    def handle_errors(self, statusCode, statusText, url, method, responseHeaders, responseBody, response, requestHeaders, requestBody):
         if statusCode == 429:
             raise DDoSProtection(self.id + ' ' + str(statusCode) + ' ' + statusText + ' ' + requestBody)
         code = self.safe_value(response, 'code', 0)

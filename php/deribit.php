@@ -529,8 +529,8 @@ class deribit extends Exchange {
         );
         $balance = $this->safe_value($response, 'result', array());
         $account = $this->account();
-        $account['free'] = $this->safe_float($balance, 'availableFunds');
-        $account['used'] = $this->safe_float($balance, 'maintenanceMargin');
+        $account['free'] = $this->safe_float($balance, 'available_funds');
+        $account['used'] = $this->safe_float($balance, 'maintenance_margin');
         $account['total'] = $this->safe_float($balance, 'equity');
         $result[$code] = $account;
         return $this->parse_balance($result);

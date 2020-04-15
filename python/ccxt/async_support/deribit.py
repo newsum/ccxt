@@ -534,8 +534,8 @@ class deribit(Exchange):
         }
         balance = self.safe_value(response, 'result', {})
         account = self.account()
-        account['free'] = self.safe_float(balance, 'availableFunds')
-        account['used'] = self.safe_float(balance, 'maintenanceMargin')
+        account['free'] = self.safe_float(balance, 'available_funds')
+        account['used'] = self.safe_float(balance, 'maintenance_margin')
         account['total'] = self.safe_float(balance, 'equity')
         result[code] = account
         return self.parse_balance(result)

@@ -527,8 +527,8 @@ module.exports = class deribit extends Exchange {
         };
         const balance = this.safeValue (response, 'result', {});
         const account = this.account ();
-        account['free'] = this.safeFloat (balance, 'availableFunds');
-        account['used'] = this.safeFloat (balance, 'maintenanceMargin');
+        account['free'] = this.safeFloat (balance, 'available_funds');
+        account['used'] = this.safeFloat (balance, 'maintenance_margin');
         account['total'] = this.safeFloat (balance, 'equity');
         result[code] = account;
         return this.parseBalance (result);

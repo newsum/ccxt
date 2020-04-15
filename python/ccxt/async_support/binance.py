@@ -73,8 +73,15 @@ class binance(Exchange):
             'urls': {
                 'logo': 'https://user-images.githubusercontent.com/1294454/29604020-d5483cdc-87ee-11e7-94c7-d1a8d9169293.jpg',
                 'test': {
+                    'web': 'https://www.binance.com',
+                    'wapi': 'https://api.binance.com/wapi/v3',
+                    'sapi': 'https://api.binance.com/sapi/v1',
                     'fapiPublic': 'https://testnet.binancefuture.com/fapi/v1',
                     'fapiPrivate': 'https://testnet.binancefuture.com/fapi/v1',
+                    'public': 'https://api.binance.com/api/v3',
+                    'private': 'https://api.binance.com/api/v3',
+                    'v3': 'https://api.binance.com/api/v3',
+                    'v1': 'https://api.binance.com/api/v1',
                 },
                 'api': {
                     'web': 'https://www.binance.com',
