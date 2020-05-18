@@ -430,7 +430,6 @@ declare module 'ccxt' {
 
     export class _1btcxe extends Exchange {}
     export class acx extends Exchange {}
-    export class adara extends Exchange {}
     export class anxpro extends Exchange {}
     export class aofex extends Exchange {}
     export class bcex extends Exchange {}
@@ -494,6 +493,7 @@ declare module 'ccxt' {
     export class deribit extends Exchange {}
     export class digifinex extends Exchange {}
     export class dsx extends Exchange {}
+    export class eterbase extends Exchange {}
     export class exmo extends Exchange {}
     export class exx extends Exchange {}
     export class fcoin extends Exchange {}
@@ -504,8 +504,8 @@ declare module 'ccxt' {
     export class fybse extends Exchange {}
     export class gateio extends Exchange {}
     export class gemini extends Exchange {}
+    export class hbtc extends Exchange {}
     export class hitbtc extends Exchange {}
-    export class hitbtc2 extends hitbtc {}
     export class hollaex extends Exchange {}
     export class huobipro extends Exchange {}
     export class huobiru extends huobipro {}
@@ -534,6 +534,7 @@ declare module 'ccxt' {
     export class phemex extends Exchange {}
     export class poloniex extends Exchange {}
     export class probit extends Exchange {}
+    export class qtrade extends Exchange {}
     export class rightbtc extends Exchange {}
     export class southxchange extends Exchange {}
     export class stex extends Exchange {}

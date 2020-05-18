@@ -30,7 +30,6 @@ class deribit(Exchange):
             'countries': ['NL'],  # Netherlands
             'version': 'v2',
             'userAgent': None,
-            'contractPrice': 10,
             'rateLimit': 500,
             'has': {
                 'CORS': True,
@@ -533,11 +532,13 @@ class deribit(Exchange):
             'info': response,
         }
         balance = self.safe_value(response, 'result', {})
+        currencyId = self.safe_string(balance, 'currency')
+        currencyCode = self.safe_currency_code(currencyId)
         account = self.account()
         account['free'] = self.safe_float(balance, 'available_funds')
         account['used'] = self.safe_float(balance, 'maintenance_margin')
         account['total'] = self.safe_float(balance, 'equity')
-        result[code] = account
+        result[currencyCode] = account
         return self.parse_balance(result)
 
     async def create_deposit_address(self, code, params={}):
