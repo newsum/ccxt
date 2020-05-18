@@ -19,6 +19,7 @@ class deribit extends Exchange {
             'version' => 'v2',
             'userAgent' => null,
             'rateLimit' => 500,
+            'contractPrice' => 10,
             'has' => array(
                 'CORS' => true,
                 'editOrder' => true,
