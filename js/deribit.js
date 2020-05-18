@@ -17,6 +17,7 @@ module.exports = class deribit extends Exchange {
             'version': 'v2',
             'userAgent': undefined,
             'rateLimit': 500,
+            'contractPrice': 10,
             'has': {
                 'CORS': true,
                 'editOrder': true,
