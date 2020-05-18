@@ -16,7 +16,6 @@ module.exports = class deribit extends Exchange {
             'countries': [ 'NL' ], // Netherlands
             'version': 'v2',
             'userAgent': undefined,
-            'contractPrice': 10,
             'rateLimit': 500,
             'has': {
                 'CORS': true,
@@ -526,11 +525,13 @@ module.exports = class deribit extends Exchange {
             'info': response,
         };
         const balance = this.safeValue (response, 'result', {});
+        const currencyId = this.safeString (balance, 'currency');
+        const currencyCode = this.safeCurrencyCode (currencyId);
         const account = this.account ();
         account['free'] = this.safeFloat (balance, 'available_funds');
         account['used'] = this.safeFloat (balance, 'maintenance_margin');
         account['total'] = this.safeFloat (balance, 'equity');
-        result[code] = account;
+        result[currencyCode] = account;
         return this.parseBalance (result);
     }
 

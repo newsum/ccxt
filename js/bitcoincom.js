@@ -2,7 +2,7 @@
 
 // ---------------------------------------------------------------------------
 
-const hitbtc2 = require ('./hitbtc2');
+const hitbtc2 = require ('./hitbtc');
 // ---------------------------------------------------------------------------
 
 module.exports = class bitcoincom extends hitbtc2 {
