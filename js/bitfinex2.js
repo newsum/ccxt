@@ -1132,7 +1132,7 @@ module.exports = class bitfinex2 extends bitfinex {
     }
 
     nonce () {
-        return this.milliseconds ();
+        return this.milliseconds() * 1000;
     }
 
     sign (path, api = 'public', method = 'GET', params = {}, headers = undefined, body = undefined) {
